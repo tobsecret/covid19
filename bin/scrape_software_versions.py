@@ -35,7 +35,7 @@ for k in list(results):
 # Dump to YAML
 print ('''
 id: 'software_versions'
-section_name: 'nf-core/covid Software Versions'
+section_name: 'nf-core/covid19Software Versions'
 section_href: 'https://github.com/nf-core/covid'
 plot_type: 'html'
 description: 'are collected at run time from the software output.'

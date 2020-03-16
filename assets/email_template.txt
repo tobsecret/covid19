@@ -4,16 +4,16 @@
   |\\ | |__  __ /  ` /  \\ |__) |__         }  {
   | \\| |       \\__, \\__/ |  \\ |___     \\`-._,-`-,
                                         `._,._,'
-  nf-core/covid v${version}
+  nf-core/covid19v${version}
 ----------------------------------------------------
 
 Run Name: $runName
 
 <% if (success){
-    out << "## nf-core/covid execution completed successfully! ##"
+    out << "## nf-core/covid19execution completed successfully! ##"
 } else {
     out << """####################################################
-## nf-core/covid execution completed unsuccessfully! ##
+## nf-core/covid19execution completed unsuccessfully! ##
 ####################################################
 The exit status of the task that caused the workflow execution to fail was: $exitStatus.
 The full error message was:

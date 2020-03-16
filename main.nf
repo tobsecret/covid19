@@ -3,7 +3,7 @@
 ========================================================================================
                          nf-core/covid
 ========================================================================================
- nf-core/covid Analysis Pipeline.
+ nf-core/covid19Analysis Pipeline.
  #### Homepage / Documentation
  https://github.com/nf-core/covid
 ----------------------------------------------------------------------------------------
@@ -18,7 +18,7 @@ def helpMessage() {
 
     The typical command for running the pipeline is as follows:
 
-    nextflow run nf-core/covid --reads '*_R{1,2}.fastq.gz' -profile docker
+    nextflow run nf-core/covid19--reads '*_R{1,2}.fastq.gz' -profile docker
 
     Mandatory arguments:
       --reads [file]                Path to input data (must be surrounded with quotes)
@@ -160,7 +160,7 @@ Channel.from(summary.collect{ [it.key, it.value] })
     .map { x -> """
     id: 'nf-core-covid-summary'
     description: " - this information is collected when the pipeline is started."
-    section_name: 'nf-core/covid Workflow Summary'
+    section_name: 'nf-core/covid19Workflow Summary'
     section_href: 'https://github.com/nf-core/covid'
     plot_type: 'html'
     data: |
@@ -399,7 +399,7 @@ def nfcoreHeader() {
     ${c_blue}  |\\ | |__  __ /  ` /  \\ |__) |__         ${c_yellow}}  {${c_reset}
     ${c_blue}  | \\| |       \\__, \\__/ |  \\ |___     ${c_green}\\`-._,-`-,${c_reset}
                                             ${c_green}`._,._,\'${c_reset}
-    ${c_purple}  nf-core/covid v${workflow.manifest.version}${c_reset}
+    ${c_purple}  nf-core/covid19v${workflow.manifest.version}${c_reset}
     -${c_dim}--------------------------------------------------${c_reset}-
     """.stripIndent()
 }
