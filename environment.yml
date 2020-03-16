@@ -13,3 +13,10 @@ dependencies:
   # TODO nf-core: Add required software dependencies here
   - bioconda::fastqc=0.11.8
   - bioconda::multiqc=1.8
+  - bioconda::fastp
+  - bioconda::samtools
+  - bioconda:minimap2
+  - nanoplot
+  - spades (extra container from bioconda)
+  - unicycler (extra container from bioconda)
+
