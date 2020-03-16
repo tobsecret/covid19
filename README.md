@@ -13,6 +13,19 @@
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It comes with docker containers making installation trivial and results highly reproducible.
 
+## Pipeline summary
+
+Initial workflow development will be based on workflows developed in:
+
+Initial analysis of COVID-19 data using Galaxy, BioConda and public research infrastructure (XSEDE, de.NBI-cloud, ARDC cloud)
+[https://github.com/galaxyproject/SARS-CoV-2](https://github.com/galaxyproject/SARS-CoV-2)
+
+> **No more business as usual: agile and effective responses to emerging pathogen threats require open data and open analytics**
+>
+> usegalaxy.org, usegalaxy.eu, usegalaxy.org.au, usegalaxy.be and hyphy.org development teams, Anton Nekrutenko, Sergei L Kosakovsky Pond.
+>
+> *bioRxiv* 2020.02.21.959973; doi: [10.1101/2020.02.21.959973](https://doi.org/10.1101/2020.02.21.959973)
+
 ## Quick Start
 
 i. Install [`nextflow`](https://nf-co.re/usage/installation)
@@ -56,22 +69,11 @@ The nf-core/covid19 pipeline comes with documentation about the pipeline, found 
 
 nf-core/covid19 was originally written by Michael L Heuer, Jordan Wilheim, Maxime Garcia, Alexander Peltzer.
 
-Initial workflow development will be based on workflows developed in:
-
-Initial analysis of COVID-19 data using Galaxy, BioConda and public research infrastructure (XSEDE, de.NBI-cloud, ARDC cloud)
-[https://github.com/galaxyproject/SARS-CoV-2](https://github.com/galaxyproject/SARS-CoV-2)
-
-> **No more business as usual: agile and effective responses to emerging pathogen threats require open data and open analytics**
->
-> usegalaxy.org, usegalaxy.eu, usegalaxy.org.au, usegalaxy.be and hyphy.org development teams, Anton Nekrutenko, Sergei L Kosakovsky Pond.
->
-> *bioRxiv* 2020.02.21.959973; doi: [10.1101/2020.02.21.959973](https://doi.org/10.1101/2020.02.21.959973)
-
 ## Contributions and Support
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
 
-For further information or help, don't hesitate to get in touch on [Slack](https://nfcore.slack.com/channels/covid19) (you can join with [this invite](https://nf-co.re/join/slack)).
+For further information or help, don't hesitate to get in touch on [Slack](https://nfcore.slack.com/channels/covid) (you can join with [this invite](https://nf-co.re/join/slack)).
 
 ## Citation
 
