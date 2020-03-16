@@ -1,4 +1,4 @@
-# ![nf-core/covid19](docs/images/nf-core-covid_logo.png)
+# ![nf-core/covid19](docs/images/nf-core-covid19_logo.png)
 
 [![GitHub Actions CI Status](https://github.com/nf-core/covid19/workflows/nf-core%20CI/badge.svg)](https://github.com/nf-core/covid19/actions)
 [![GitHub Actions Linting Status](https://github.com/nf-core/covid19/workflows/nf-core%20linting/badge.svg)](https://github.com/nf-core/covid19/actions)
@@ -58,7 +58,7 @@ nf-core/covid19 was originally written by Michael L Heuer, Jordan Wilheim, Maxim
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
 
-For further information or help, don't hesitate to get in touch on [Slack](https://nfcore.slack.com/channels/covid) (you can join with [this invite](https://nf-co.re/join/slack)).
+For further information or help, don't hesitate to get in touch on [Slack](https://nfcore.slack.com/channels/covid19) (you can join with [this invite](https://nf-co.re/join/slack)).
 
 ## Citation
 
