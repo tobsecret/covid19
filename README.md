@@ -1,6 +1,4 @@
-# ![nf-core/covid19](docs/images/nf-core-covid_logo.png)
-
-**A pipeline to analyze virus genomics data (COVID-19)**.
+# ![nf-core/covid19](docs/images/nf-core-covid19_logo.png)
 
 [![GitHub Actions CI Status](https://github.com/nf-core/covid19/workflows/nf-core%20CI/badge.svg)](https://github.com/nf-core/covid19/actions)
 [![GitHub Actions Linting Status](https://github.com/nf-core/covid19/workflows/nf-core%20linting/badge.svg)](https://github.com/nf-core/covid19/actions)
@@ -66,13 +64,13 @@ The nf-core/covid19 pipeline comes with documentation about the pipeline, found 
 
 ## Credits
 
-nf-core/covid19 was originally written by Michael L Heuer, Jordan Wilheim, Maxime Garcia, Alexander Peltzer.
+nf-core/covid19 was originally written by Michael L Heuer, Jordan Wilheim, Maxime Garcia, Alexander Peltzer and Harshil Patel.
 
 ## Contributions and Support
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
 
-For further information or help, don't hesitate to get in touch on [Slack](https://nfcore.slack.com/channels/covid) (you can join with [this invite](https://nf-co.re/join/slack)).
+For further information or help, don't hesitate to get in touch on [Slack](https://nfcore.slack.com/channels/covid19) (you can join with [this invite](https://nf-co.re/join/slack)).
 
 ## Citation
 
