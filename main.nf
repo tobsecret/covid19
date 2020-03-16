@@ -1,11 +1,12 @@
 #!/usr/bin/env nextflow
 /*
 ========================================================================================
-                         nf-core/covid
+                         nf-core/covid19
 ========================================================================================
- nf-core/covid19Analysis Pipeline.
+ nf-core/covid19 Analysis Pipeline.
+
  #### Homepage / Documentation
- https://github.com/nf-core/covid
+ https://github.com/nf-core/covid19
 ----------------------------------------------------------------------------------------
 */
 
@@ -18,7 +19,8 @@ def helpMessage() {
 
     The typical command for running the pipeline is as follows:
 
-    nextflow run nf-core/covid19--reads '*_R{1,2}.fastq.gz' -profile docker
+    nextflow run nf-core/covid19 --reads '*_R{1,2}.fastq.gz' -profile docker
+
 
     Mandatory arguments:
       --reads [file]                Path to input data (must be surrounded with quotes)
@@ -158,10 +160,11 @@ Channel.from(summary.collect{ [it.key, it.value] })
     .map { k,v -> "<dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }
     .reduce { a, b -> return [a, b].join("\n            ") }
     .map { x -> """
-    id: 'nf-core-covid-summary'
+    id: 'nf-core-covid19-summary'
     description: " - this information is collected when the pipeline is started."
-    section_name: 'nf-core/covid19Workflow Summary'
-    section_href: 'https://github.com/nf-core/covid'
+    section_name: 'nf-core/covid19 Workflow Summary'
+    section_href: 'https://github.com/nf-core/covid19'
+
     plot_type: 'html'
     data: |
         <dl class=\"dl-horizontal\">
@@ -271,9 +274,9 @@ process output_documentation {
 workflow.onComplete {
 
     // Set up the e-mail variables
-    def subject = "[nf-core/covid] Successful: $workflow.runName"
+    def subject = "[nf-core/covid19] Successful: $workflow.runName"
     if (!workflow.success) {
-        subject = "[nf-core/covid] FAILED: $workflow.runName"
+        subject = "[nf-core/covid19] FAILED: $workflow.runName"
     }
     def email_fields = [:]
     email_fields['version'] = workflow.manifest.version
@@ -305,12 +308,12 @@ workflow.onComplete {
         if (workflow.success) {
             mqc_report = ch_multiqc_report.getVal()
             if (mqc_report.getClass() == ArrayList) {
-                log.warn "[nf-core/covid] Found multiple reports from process 'multiqc', will use only one"
+                log.warn "[nf-core/covid19] Found multiple reports from process 'multiqc', will use only one"
                 mqc_report = mqc_report[0]
             }
         }
     } catch (all) {
-        log.warn "[nf-core/covid] Could not attach MultiQC report to summary email"
+        log.warn "[nf-core/covid19] Could not attach MultiQC report to summary email"
     }
 
     // Check if we are only sending emails on failure
@@ -342,11 +345,11 @@ workflow.onComplete {
             if (params.plaintext_email) { throw GroovyException('Send plaintext e-mail, not HTML') }
             // Try to send HTML e-mail using sendmail
             [ 'sendmail', '-t' ].execute() << sendmail_html
-            log.info "[nf-core/covid] Sent summary e-mail to $email_address (sendmail)"
+            log.info "[nf-core/covid19] Sent summary e-mail to $email_address (sendmail)"
         } catch (all) {
             // Catch failures and try with plaintext
             [ 'mail', '-s', subject, email_address ].execute() << email_txt
-            log.info "[nf-core/covid] Sent summary e-mail to $email_address (mail)"
+            log.info "[nf-core/covid19] Sent summary e-mail to $email_address (mail)"
         }
     }
 
@@ -372,10 +375,10 @@ workflow.onComplete {
     }
 
     if (workflow.success) {
-        log.info "-${c_purple}[nf-core/covid]${c_green} Pipeline completed successfully${c_reset}-"
+        log.info "-${c_purple}[nf-core/covid19]${c_green} Pipeline completed successfully${c_reset}-"
     } else {
         checkHostname()
-        log.info "-${c_purple}[nf-core/covid]${c_red} Pipeline completed with errors${c_reset}-"
+        log.info "-${c_purple}[nf-core/covid19]${c_red} Pipeline completed with errors${c_reset}-"
     }
 
 }
@@ -399,7 +402,7 @@ def nfcoreHeader() {
     ${c_blue}  |\\ | |__  __ /  ` /  \\ |__) |__         ${c_yellow}}  {${c_reset}
     ${c_blue}  | \\| |       \\__, \\__/ |  \\ |___     ${c_green}\\`-._,-`-,${c_reset}
                                             ${c_green}`._,._,\'${c_reset}
-    ${c_purple}  nf-core/covid19v${workflow.manifest.version}${c_reset}
+    ${c_purple}  nf-core/covid19 v${workflow.manifest.version}${c_reset}
     -${c_dim}--------------------------------------------------${c_reset}-
     """.stripIndent()
 }

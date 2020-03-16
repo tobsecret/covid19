@@ -21,8 +21,8 @@ jobs:
           sudo mv nextflow /usr/local/bin/
       - name: Pull docker image
         run: |
-          docker pull nfcore/covid:dev
-          docker tag nfcore/covid:dev nfcore/covid:dev
+          docker pull nfcore/covid19:dev
+          docker tag nfcore/covid19:dev nfcore/covid19:dev
       - name: Run pipeline with test data
         run: |
           # TODO nf-core: You can customise CI pipeline run tests as required

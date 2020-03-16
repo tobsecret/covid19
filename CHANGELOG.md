@@ -5,7 +5,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## v1.0dev - [date]
 
-Initial release of nf-core/covid, created with the [nf-core](http://nf-co.re/) template.
+Initial release of nf-core/covid19, created with the [nf-core](http://nf-co.re/) template.
 
 ### `Added`
 

@@ -35,7 +35,7 @@ A clear and concise description of what you expected to happen.
 
 - Engine: <!-- [e.g. Conda, Docker or Singularity] -->
 - version: <!-- [e.g. 1.0.0] -->
-- Image tag: <!-- [e.g. nfcore/covid:1.0.0] -->
+- Image tag: <!-- [e.g. nfcore/covid19:1.0.0] -->
 
 ## Additional context
 
