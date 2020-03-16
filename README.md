@@ -59,7 +59,7 @@ nf-core/covid19 was originally written by Michael L Heuer, Jordan Wilheim, Maxim
 Initial workflow development will be based on workflows developed in:
 
 Initial analysis of COVID-19 data using Galaxy, BioConda and public research infrastructure (XSEDE, de.NBI-cloud, ARDC cloud)
-https://github.com/galaxyproject/SARS-CoV-2
+[https://github.com/galaxyproject/SARS-CoV-2](https://github.com/galaxyproject/SARS-CoV-2)
 
 > **No more business as usual: agile and effective responses to emerging pathogen threats require open data and open analytics**
 >
@@ -71,7 +71,7 @@ https://github.com/galaxyproject/SARS-CoV-2
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
 
-For further information or help, don't hesitate to get in touch on [Slack](https://nfcore.slack.com/channels/covid) (you can join with [this invite](https://nf-co.re/join/slack)).
+For further information or help, don't hesitate to get in touch on [Slack](https://nfcore.slack.com/channels/covid19) (you can join with [this invite](https://nf-co.re/join/slack)).
 
 ## Citation
 
