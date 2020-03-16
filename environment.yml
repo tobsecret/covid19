@@ -6,17 +6,33 @@ channels:
   - bioconda
   - defaults
 dependencies:
+  # conda-forge packages
   - conda-forge::python=3.7.3
   - conda-forge::markdown=3.1.1
   - conda-forge::pymdown-extensions=6.0
   - conda-forge::pygments=2.5.2
-  # TODO nf-core: Add required software dependencies here
-  - bioconda::fastqc=0.11.8
-  - bioconda::multiqc=1.8
-  - bioconda::fastp
-  - bioconda::samtools
-  - bioconda:minimap2
-  - nanoplot
-  - spades (extra container from bioconda)
-  - unicycler (extra container from bioconda)
 
+  # bioconda packages
+  - bioconda::fastqc=0.11.9
+  - bioconda::multiqc=1.8
+  - bioconda::fastp=0.20.0
+  - bioconda::nanoplot=1.29.0
+  - bioconda::bwa=0.7.17
+  - bioconda::minimap2=2.17
+  - bioconda::samtools=1.10
+  - bioconda::bedtools=2.29.2
+  - bioconda::picard=2.22.0
+  - bioconda::spades=3.14.0
+  - bioconda::unicycler=0.4.8
+  - bioconda::bandage=0.8.1
+  - bioconda::mafft=7.455
+  - bioconda::fasttree=2.1.10
+  - bioconda::lofreq=2.1.4
+  - bioconda::snpeff=4.3.1t
+  - bioconda::snpsift=4.3.1t
+  - bioconda::porechop=0.2.3_seqan2.1.1
+  - bioconda::filtlong=0.2.0
+  - bioconda::emboss=6.6.0
+  - bioconda::hyphy=2.5.6
+  #- bioconda::sra-tools=2.10.3
+  #- bioconda::ncbi-acc-download=0.2.6
