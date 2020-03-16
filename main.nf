@@ -4,6 +4,7 @@
                          nf-core/covid19
 ========================================================================================
  nf-core/covid19 Analysis Pipeline.
+
  #### Homepage / Documentation
  https://github.com/nf-core/covid19
 ----------------------------------------------------------------------------------------
@@ -19,6 +20,7 @@ def helpMessage() {
     The typical command for running the pipeline is as follows:
 
     nextflow run nf-core/covid19 --reads '*_R{1,2}.fastq.gz' -profile docker
+
 
     Mandatory arguments:
       --reads [file]                Path to input data (must be surrounded with quotes)
@@ -162,6 +164,7 @@ Channel.from(summary.collect{ [it.key, it.value] })
     description: " - this information is collected when the pipeline is started."
     section_name: 'nf-core/covid19 Workflow Summary'
     section_href: 'https://github.com/nf-core/covid19'
+
     plot_type: 'html'
     data: |
         <dl class=\"dl-horizontal\">
