@@ -1,7 +1,5 @@
 # ![nf-core/covid19](docs/images/nf-core-covid_logo.png)
 
-**A pipeline to analyze virus genomics data (COVID-19)**.
-
 [![GitHub Actions CI Status](https://github.com/nf-core/covid19/workflows/nf-core%20CI/badge.svg)](https://github.com/nf-core/covid19/actions)
 [![GitHub Actions Linting Status](https://github.com/nf-core/covid19/workflows/nf-core%20linting/badge.svg)](https://github.com/nf-core/covid19/actions)
 [![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A519.10.0-brightgreen.svg)](https://www.nextflow.io/)
