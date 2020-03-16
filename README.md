@@ -1,13 +1,13 @@
 # ![nf-core/covid19](docs/images/nf-core-covid_logo.png)
 
-**A pipeline to analyze virus gneomics data (COVID19)**.
+**A pipeline to analyze virus genomics data (COVID-19)**.
 
 [![GitHub Actions CI Status](https://github.com/nf-core/covid19/workflows/nf-core%20CI/badge.svg)](https://github.com/nf-core/covid19/actions)
 [![GitHub Actions Linting Status](https://github.com/nf-core/covid19/workflows/nf-core%20linting/badge.svg)](https://github.com/nf-core/covid19/actions)
 [![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A519.10.0-brightgreen.svg)](https://www.nextflow.io/)
 
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg)](http://bioconda.github.io/)
-[![Docker](https://img.shields.io/docker/automated/nfcore/covid.svg)](https://hub.docker.com/r/nfcore/covid)
+[![Docker](https://img.shields.io/docker/automated/nfcore/covid19.svg)](https://hub.docker.com/r/nfcore/covid19)
 
 ## Introduction
 
@@ -54,7 +54,7 @@ The nf-core/covid19 pipeline comes with documentation about the pipeline, found 
 
 ## Credits
 
-nf-core/covid19 was originally written by Michael L Heuer, Jordan Wilheim, Maxime Garcia, Alexander Peltzer..
+nf-core/covid19 was originally written by Michael L Heuer, Jordan Wilheim, Maxime Garcia, Alexander Peltzer.
 
 ## Contributions and Support
 

@@ -1,6 +1,6 @@
-# nf-core/covid pull request
+# nf-core/covid19 pull request
 
-Many thanks for contributing to nf-core/covid!
+Many thanks for contributing to nf-core/covid19!
 
 Please fill in the appropriate checklist below (delete whatever is not relevant).
 These are the most common things requested on pull requests (PRs).
@@ -9,11 +9,11 @@ These are the most common things requested on pull requests (PRs).
 
 - [ ] This comment contains a description of changes (with reason)
 - [ ] If you've fixed a bug or added code that should be tested, add tests!
-- [ ] If necessary, also make a PR on the [nf-core/covid branch on the nf-core/test-datasets repo](https://github.com/nf-core/test-datasets/pull/new/nf-core/covid)
+- [ ] If necessary, also make a PR on the [nf-core/covid branch on the nf-core/test-datasets repo](https://github.com/nf-core/test-datasets/pull/new/nf-core/covid19)
 - [ ] Ensure the test suite passes (`nextflow run . -profile test,docker`).
 - [ ] Make sure your code lints (`nf-core lint .`).
 - [ ] Documentation in `docs` is updated
 - [ ] `CHANGELOG.md` is updated
 - [ ] `README.md` is updated
 
-**Learn more about contributing:** [CONTRIBUTING.md](https://github.com/nf-core/covid/tree/master/.github/CONTRIBUTING.md)
+**Learn more about contributing:** [CONTRIBUTING.md](https://github.com/nf-core/covid19/tree/master/.github/CONTRIBUTING.md)
