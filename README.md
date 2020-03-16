@@ -17,8 +17,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 
 Initial workflow development will be based on workflows developed in:
 
-Initial analysis of COVID-19 data using Galaxy, BioConda and public research infrastructure (XSEDE, de.NBI-cloud, ARDC cloud)
-[https://github.com/galaxyproject/SARS-CoV-2](https://github.com/galaxyproject/SARS-CoV-2)
+[Initial analysis of COVID-19 data using Galaxy, BioConda and public research infrastructure (XSEDE, de.NBI-cloud, ARDC cloud)](https://github.com/galaxyproject/SARS-CoV-2)
 
 > **No more business as usual: agile and effective responses to emerging pathogen threats require open data and open analytics**
 >
