@@ -1,9 +1,9 @@
-# ![nf-core/covid](docs/images/nf-core-covid_logo.png)
+# ![nf-core/covid19](docs/images/nf-core-covid_logo.png)
 
 **A pipeline to analyze virus gneomics data (COVID19)**.
 
-[![GitHub Actions CI Status](https://github.com/nf-core/covid/workflows/nf-core%20CI/badge.svg)](https://github.com/nf-core/covid/actions)
-[![GitHub Actions Linting Status](https://github.com/nf-core/covid/workflows/nf-core%20linting/badge.svg)](https://github.com/nf-core/covid/actions)
+[![GitHub Actions CI Status](https://github.com/nf-core/covid19/workflows/nf-core%20CI/badge.svg)](https://github.com/nf-core/covid19/actions)
+[![GitHub Actions Linting Status](https://github.com/nf-core/covid19/workflows/nf-core%20linting/badge.svg)](https://github.com/nf-core/covid19/actions)
 [![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A519.10.0-brightgreen.svg)](https://www.nextflow.io/)
 
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg)](http://bioconda.github.io/)
@@ -22,7 +22,7 @@ ii. Install either [`Docker`](https://docs.docker.com/engine/installation/) or [
 iii. Download the pipeline and test it on a minimal dataset with a single command
 
 ```bash
-nextflow run nf-core/covid -profile test,<docker/singularity/conda/institute>
+nextflow run nf-core/covid19 -profile test,<docker/singularity/conda/institute>
 ```
 
 > Please check [nf-core/configs](https://github.com/nf-core/configs#documentation) to see if a custom config file to run nf-core pipelines already exists for your Institute. If so, you can simply use `-profile <institute>` in your command. This will enable either `docker` or `singularity` and set the appropriate execution settings for your local compute environment.
@@ -32,14 +32,14 @@ iv. Start running your own analysis!
 <!-- TODO nf-core: Update the default command above used to run the pipeline -->
 
 ```bash
-nextflow run nf-core/covid -profile <docker/singularity/conda/institute> --reads '*_R{1,2}.fastq.gz' --genome GRCh37
+nextflow run nf-core/covid19 -profile <docker/singularity/conda/institute> --reads '*_R{1,2}.fastq.gz' --genome GRCh37
 ```
 
 See [usage docs](docs/usage.md) for all of the available options when running the pipeline.
 
 ## Documentation
 
-The nf-core/covid pipeline comes with documentation about the pipeline, found in the `docs/` directory:
+The nf-core/covid19 pipeline comes with documentation about the pipeline, found in the `docs/` directory:
 
 1. [Installation](https://nf-co.re/usage/installation)
 2. Pipeline configuration
@@ -54,7 +54,7 @@ The nf-core/covid pipeline comes with documentation about the pipeline, found in
 
 ## Credits
 
-nf-core/covid was originally written by Michael L Heuer, Jordan Wilheim, Maxime Garcia, Alexander Peltzer..
+nf-core/covid19 was originally written by Michael L Heuer, Jordan Wilheim, Maxime Garcia, Alexander Peltzer..
 
 ## Contributions and Support
 
@@ -65,7 +65,7 @@ For further information or help, don't hesitate to get in touch on [Slack](https
 ## Citation
 
 <!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi. -->
-<!-- If you use  nf-core/covid for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
+<!-- If you use  nf-core/covid19 for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
 
 You can cite the `nf-core` publication as follows:
 

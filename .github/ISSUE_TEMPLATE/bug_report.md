@@ -1,4 +1,4 @@
-# nf-core/covid bug report
+# nf-core/covid19 bug report
 
 Hi there!
 

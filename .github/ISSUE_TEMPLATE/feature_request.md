@@ -1,4 +1,4 @@
-# nf-core/covid feature request
+# nf-core/covid19 feature request
 
 Hi there!
 
