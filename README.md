@@ -52,7 +52,7 @@ The nf-core/covid19 pipeline comes with documentation about the pipeline, found 
 
 ## Credits
 
-nf-core/covid19 was originally written by Michael L Heuer, Jordan Wilheim, Maxime Garcia, Alexander Peltzer.
+nf-core/covid19 was originally written by Michael L Heuer, Jordan Wilheim, Maxime Garcia, Alexander Peltzer and Harshil Patel.
 
 ## Contributions and Support
 
