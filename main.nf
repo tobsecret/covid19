@@ -284,7 +284,7 @@ if (!params.bwa_index) {
 process MiniMap2Index {
     tag "$fasta"
     label 'process_medium'
-    publishDir path: { params.save_reference ? "${params.outdir}/genome/minimap2" : params.outdir },
+    publishDir path: { params.save_reference ? "${params.outdir}/genome/MiniMap2Index" : params.outdir },
         saveAs: { params.save_reference ? it : null }, mode: params.publish_dir_mode
 
     input:
