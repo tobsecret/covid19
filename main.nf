@@ -218,7 +218,33 @@ process CheckDesign {
     """
 }
 
+// Function to get list of [ sample, [ fastq_1, fastq_2 ], single_end?, long_reads? ]
+def validate_input(LinkedHashMap sample) {
+    def sample_id = sample.sample_id
+    def fastq_1 = sample.fastq_1
+    def fastq_2 = sample.fastq_2
+    def single_end = sample.single_end.toBoolean()
+    def long_reads = sample.long_reads.toBoolean()
 
+    def new_array = []
+    if (single_end || long_reads) {
+        new_array = [ sample_id, [ file(fastq_1, checkIfExists: true) ], single_end, long_reads ]
+    } else {
+        new_array = [ sample_id, [ file(fastq_1, checkIfExists: true), file(fastq_2, checkIfExists: true) ], single_end, long_reads ]
+    }
+    return new_array
+}
+
+/*
+ * Create channels for input fastq files: [ sample, fastq_1, fastq_2, single_end?, long_reads? ]
+ */
+ch_samplesheet_reformat
+    .splitCsv(header:true, sep:',')
+    .map { validate_input(it) }
+    .into { ch_sample_info;
+            ch_sample_name }
+
+ch_sample_info.println()
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
