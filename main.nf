@@ -19,7 +19,7 @@ def helpMessage() {
 
     The typical command for running the pipeline is as follows:
 
-    nextflow run nf-core/covid19 --input samplesheet.csv -profile docker
+    nextflow run nf-core/covid19 --input samplesheet.csv --genome hg38 -profile docker
 
 
     Mandatory arguments:
@@ -169,77 +169,294 @@ checkHostname()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // /*
-//  * Create a channel for input read files
+//  * PREPROCESSING: Build BWA index
 //  */
-// if (params.readPaths) {
-//     if (params.single_end) {
-//         Channel
-//             .from(params.readPaths)
-//             .map { row -> [ row[0], [ file(row[1][0], checkIfExists: true) ] ] }
-//             .ifEmpty { exit 1, "params.readPaths was empty - no input files supplied" }
-//             .into { ch_read_files_fastqc; ch_read_files_trimming }
-//     } else {
-//         Channel
-//             .from(params.readPaths)
-//             .map { row -> [ row[0], [ file(row[1][0], checkIfExists: true), file(row[1][1], checkIfExists: true) ] ] }
-//             .ifEmpty { exit 1, "params.readPaths was empty - no input files supplied" }
-//             .into { ch_read_files_fastqc; ch_read_files_trimming }
+// if (!params.bwa_index) {
+//     process BWAIndex {
+//         tag "$fasta"
+//         label 'process_high'
+//         publishDir path: { params.save_reference ? "${params.outdir}/genome" : params.outdir },
+//             saveAs: { params.save_reference ? it : null }, mode: params.publish_dir_mode
+//
+//         input:
+//         file fasta from ch_fasta
+//
+//         output:
+//         file "BWAIndex" into ch_bwa_index
+//
+//         script:
+//         """
+//         bwa index -a bwtsw $fasta
+//         mkdir BWAIndex && mv ${fasta}* BWAIndex
+//         """
 //     }
-// } else {
-//     Channel
-//         .fromFilePairs(params.reads, size: params.single_end ? 1 : 2)
-//         .ifEmpty { exit 1, "Cannot find any reads matching: ${params.reads}\nNB: Path needs to be enclosed in quotes!\nIf this is single-end data, please specify --single_end on the command line." }
-//         .into { ch_read_files_fastqc; ch_read_files_trimming }
 // }
 
 // /*
-//  * STEP 1 - FastQC
+//  * STEP 4 - FastQ QC using NanoPlot
 //  */
-// process fastqc {
-//     tag "$name"
-//     label 'process_medium'
-//     publishDir "${params.outdir}/fastqc", mode: 'copy',
-//         saveAs: { filename ->
-//                       filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename"
-//                 }
+// process NanoPlotFastQ {
+//     tag "$sample"
+//     label 'process_low'
+//     publishDir "${params.outdir}/nanoplot/fastq/${sample}", mode: 'copy'
+//
+//     when:
+//     !params.skip_qc && !params.skip_nanoplot
 //
 //     input:
-//     set val(name), file(reads) from ch_read_files_fastqc
+//     set val(sample), file(fastq) from ch_fastq_nanoplot.map { ch -> [ ch[0], ch[1] ] }
 //
 //     output:
-//     file "*_fastqc.{zip,html}" into ch_fastqc_results
+//     file "*.{png,html,txt,log}"
 //
 //     script:
 //     """
-//     fastqc --quiet --threads $task.cpus $reads
+//     NanoPlot -t $task.cpus --fastq $fastq
+//     """
+// }
+
+// /*
+//  * STEP 1: FastQC
+//  */
+// process FastQC {
+//     tag "$name"
+//     label 'process_medium'
+//     publishDir "${params.outdir}/fastqc", mode: params.publish_dir_mode,
+//         saveAs: { filename ->
+//                       filename.endsWith(".zip") ? "zips/$filename" : "$filename"
+//                 }
+//
+//     when:
+//     !params.skip_fastqc
+//
+//     input:
+//     set val(name), file(reads) from ch_raw_reads_fastqc
+//
+//     output:
+//     file "*.{zip,html}" into ch_fastqc_reports_mqc
+//
+//     script:
+//     // Added soft-links to original fastqs for consistent naming in MultiQC
+//     if (params.single_end) {
+//         """
+//         [ ! -f  ${name}.fastq.gz ] && ln -s $reads ${name}.fastq.gz
+//         fastqc -q -t $task.cpus ${name}.fastq.gz
+//         """
+//     } else {
+//         """
+//         [ ! -f  ${name}_1.fastq.gz ] && ln -s ${reads[0]} ${name}_1.fastq.gz
+//         [ ! -f  ${name}_2.fastq.gz ] && ln -s ${reads[1]} ${name}_2.fastq.gz
+//         fastqc -q -t $task.cpus ${name}_1.fastq.gz
+//         fastqc -q -t $task.cpus ${name}_2.fastq.gz
+//         """
+//     }
+// }
+
+// /*
+//  * STEP 3.1: Map read(s) with bwa mem
+//  */
+// process BWAMem {
+//     tag "$name"
+//     label 'process_high'
+//
+//     input:
+//     set val(name), file(reads) from ch_trimmed_reads
+//     file index from ch_bwa_index.collect()
+//
+//     output:
+//     set val(name), file("*.bam") into ch_bwa_bam
+//
+//     script:
+//     prefix = "${name}.Lb"
+//     rg = "\'@RG\\tID:${name}\\tSM:${name.split('_')[0..-2].join('_')}\\tPL:ILLUMINA\\tLB:${name}\\tPU:1\'"
+//     if (params.seq_center) {
+//         rg = "\'@RG\\tID:${name}\\tSM:${name.split('_')[0..-2].join('_')}\\tPL:ILLUMINA\\tLB:${name}\\tPU:1\\tCN:${params.seq_center}\'"
+//     }
+//     """
+//     bwa mem \\
+//         -t $task.cpus \\
+//         -M \\
+//         -R $rg \\
+//         ${index}/${bwa_base} \\
+//         $reads \\
+//         | samtools view -@ $task.cpus -b -h -F 0x0100 -O BAM -o ${prefix}.bam -
 //     """
 // }
 //
+// /*
+//  * STEP 3.2: Convert BAM to coordinate sorted BAM
+//  */
+// process SortBAM {
+//     tag "$name"
+//     label 'process_medium'
+//     if (params.save_align_intermeds) {
+//         publishDir path: "${params.outdir}/bwa/library", mode: params.publish_dir_mode,
+//             saveAs: { filename ->
+//                           if (filename.endsWith(".flagstat")) "samtools_stats/$filename"
+//                           else if (filename.endsWith(".idxstats")) "samtools_stats/$filename"
+//                           else if (filename.endsWith(".stats")) "samtools_stats/$filename"
+//                           else filename
+//                     }
+//     }
+//
+//     input:
+//     set val(name), file(bam) from ch_bwa_bam
+//
+//     output:
+//     set val(name), file("*.sorted.{bam,bam.bai}") into ch_sort_bam_merge
+//     file "*.{flagstat,idxstats,stats}" into ch_sort_bam_flagstat_mqc
+//
+//     script:
+//     prefix = "${name}.Lb"
+//     """
+//     samtools sort -@ $task.cpus -o ${prefix}.sorted.bam -T $name $bam
+//     samtools index ${prefix}.sorted.bam
+//     samtools flagstat ${prefix}.sorted.bam > ${prefix}.sorted.bam.flagstat
+//     samtools idxstats ${prefix}.sorted.bam > ${prefix}.sorted.bam.idxstats
+//     samtools stats ${prefix}.sorted.bam > ${prefix}.sorted.bam.stats
+//     """
+// }
+
+// /*
+//  * STEP 8 - Create genome/transcriptome index
+//  */
+// process MiniMap2Index {
+//     tag "$fasta"
+//     label 'process_medium'
+//
+//     input:
+//     set file(fasta), file(sizes), val(gtf), val(bed), val(is_transcripts), val(annotation_str) from ch_fasta_index
+//
+//     output:
+//     set file(fasta), file(sizes), val(gtf), val(bed), val(is_transcripts), file("*.mmi"), val(annotation_str) into ch_index
+//
+//     script:
+//     preset = (params.protocol == 'DNA' || is_transcripts) ? "-ax map-ont" : "-ax splice"
+//     kmer = (params.protocol == 'directRNA') ? "-k14" : ""
+//     stranded = (params.stranded || params.protocol == 'directRNA') ? "-uf" : ""
+//     // TODO pipeline: Should be staging bed file properly as an input
+//     junctions = (params.protocol != 'DNA' && bed) ? "--junc-bed ${file(bed)}" : ""
+//     """
+//     minimap2 $preset $kmer $stranded $junctions -t $task.cpus -d ${fasta}.mmi $fasta
+//     """
+// }
+
+// process MiniMap2Align {
+//     tag "$sample"
+//     label 'process_medium'
+//     if (params.save_align_intermeds) {
+//         publishDir path: "${params.outdir}/${params.aligner}", mode: 'copy',
+//             saveAs: { filename ->
+//                           if (filename.endsWith(".sam")) filename
+//                     }
+//     }
+//
+//     input:
+//     set val(sample), file(fastq), file(fasta), file(sizes), val(gtf), val(bed), val(is_transcripts), file(index) from ch_index
+//
+//
+//     output:
+//     set val(sample), file(sizes), val(is_transcripts), file("*.sam") into ch_align_sam
+//
+//     script:
+//     preset = (params.protocol == 'DNA' || is_transcripts) ? "-ax map-ont" : "-ax splice"
+//     kmer = (params.protocol == 'directRNA') ? "-k14" : ""
+//     stranded = (params.stranded || params.protocol == 'directRNA') ? "-uf" : ""
+//     // TODO pipeline: Should be staging bed file properly as an input
+//     junctions = (params.protocol != 'DNA' && bed) ? "--junc-bed ${file(bed)}" : ""
+//     """
+//     minimap2 $preset $kmer $stranded $junctions -t $task.cpus $index $fastq > ${sample}.sam
+//     """
+// }
+
+
+// /*
+//  * STEP 5.2: Picard CollectMultipleMetrics after merging libraries and filtering
+//  */
+// process MergedLibMetrics {
+//     tag "$name"
+//     label 'process_medium'
+//     publishDir path: "${params.outdir}/bwa/mergedLibrary", mode: params.publish_dir_mode,
+//         saveAs: { filename ->
+//                       if (filename.endsWith("_metrics")) "picard_metrics/$filename"
+//                       else if (filename.endsWith(".pdf")) "picard_metrics/pdf/$filename"
+//                       else null
+//                 }
+//
+//     when:
+//     !params.skip_picard_metrics
+//
+//     input:
+//     set val(name), file(bam) from ch_mlib_rm_orphan_bam_metrics
+//     file fasta from ch_fasta
+//
+//     output:
+//     file "*_metrics" into ch_mlib_collectmetrics_mqc
+//     file "*.pdf" into ch_mlib_collectmetrics_pdf
+//
+//     script:
+//     prefix = "${name}.mLb.clN"
+//     def avail_mem = 3
+//     if (!task.memory) {
+//         log.info "[Picard MarkDuplicates] Available memory not known - defaulting to 3GB. Specify process memory requirements to change this."
+//     } else {
+//         avail_mem = task.memory.toGiga()
+//     }
+//     """
+//     picard -Xmx${avail_mem}g CollectMultipleMetrics \\
+//         INPUT=${bam[0]} \\
+//         OUTPUT=${prefix}.CollectMultipleMetrics \\
+//         REFERENCE_SEQUENCE=$fasta \\
+//         VALIDATION_STRINGENCY=LENIENT \\
+//         TMP_DIR=tmp
+//     """
+// }
+
+// /*
+//  * STEP 9: Create IGV session file
+//  */
+// process IGV {
+//     publishDir "${params.outdir}/igv/${PEAK_TYPE}", mode: params.publish_dir_mode
+//
+//     when:
+//     !params.skip_igv
+//
+//     input:
+//     file fasta from ch_fasta
+//
+//     file bigwigs from ch_mlib_bigwig_igv.collect().ifEmpty([])
+//     file peaks from ch_mlib_macs_igv.collect().ifEmpty([])
+//     file consensus_peaks from ch_mlib_macs_consensus_igv.collect().ifEmpty([])
+//     file differential_peaks from ch_mlib_macs_consensus_deseq_comp_igv.collect().ifEmpty([])
+//
+//     file rbigwigs from ch_mrep_bigwig_igv.collect().ifEmpty([])
+//     file rpeaks from ch_mrep_macs_igv.collect().ifEmpty([])
+//     file rconsensus_peaks from ch_mrep_macs_consensus_igv.collect().ifEmpty([])
+//     file rdifferential_peaks from ch_mrep_macs_consensus_deseq_comp_igv.collect().ifEmpty([])
+//
+//     output:
+//     file "*.{txt,xml}" into ch_igv_session
+//
+//     script: // scripts are bundled with the pipeline, in nf-core/atacseq/bin/
+//     """
+//     cat *.txt > igv_files.txt
+//     igv_files_to_session.py igv_session.xml igv_files.txt ../../genome/${fasta.getName()} --path_prefix '../../'
+//     """
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Channel.from(summary.collect{ [it.key, it.value] })
     .map { k,v -> "<dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }
@@ -278,6 +495,12 @@ process get_software_versions {
     echo $workflow.manifest.version > v_pipeline.txt
     echo $workflow.nextflow.version > v_nextflow.txt
     fastqc --version > v_fastqc.txt
+    NanoPlot --version &> v_nanoplot.txt
+    echo \$(bwa 2>&1) > v_bwa.txt
+    minimap2 --version &> v_minimap2.txt
+    samtools --version > v_samtools.txt
+    picard MarkDuplicates --version &> v_picard.txt  || true
+    echo \$(R --version 2>&1) > v_R.txt
     multiqc --version > v_multiqc.txt
     scrape_software_versions.py &> software_versions_mqc.yaml
     """
@@ -488,3 +711,52 @@ def checkHostname() {
         }
     }
 }
+
+
+// /*
+//  * Create a channel for input read files
+//  */
+// if (params.readPaths) {
+//     if (params.single_end) {
+//         Channel
+//             .from(params.readPaths)
+//             .map { row -> [ row[0], [ file(row[1][0], checkIfExists: true) ] ] }
+//             .ifEmpty { exit 1, "params.readPaths was empty - no input files supplied" }
+//             .into { ch_read_files_fastqc; ch_read_files_trimming }
+//     } else {
+//         Channel
+//             .from(params.readPaths)
+//             .map { row -> [ row[0], [ file(row[1][0], checkIfExists: true), file(row[1][1], checkIfExists: true) ] ] }
+//             .ifEmpty { exit 1, "params.readPaths was empty - no input files supplied" }
+//             .into { ch_read_files_fastqc; ch_read_files_trimming }
+//     }
+// } else {
+//     Channel
+//         .fromFilePairs(params.reads, size: params.single_end ? 1 : 2)
+//         .ifEmpty { exit 1, "Cannot find any reads matching: ${params.reads}\nNB: Path needs to be enclosed in quotes!\nIf this is single-end data, please specify --single_end on the command line." }
+//         .into { ch_read_files_fastqc; ch_read_files_trimming }
+// }
+
+// /*
+//  * STEP 1 - FastQC
+//  */
+// process fastqc {
+//     tag "$name"
+//     label 'process_medium'
+//     publishDir "${params.outdir}/fastqc", mode: 'copy',
+//         saveAs: { filename ->
+//                       filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename"
+//                 }
+//
+//     input:
+//     set val(name), file(reads) from ch_read_files_fastqc
+//
+//     output:
+//     file "*_fastqc.{zip,html}" into ch_fastqc_results
+//
+//     script:
+//     """
+//     fastqc --quiet --threads $task.cpus $reads
+//     """
+// }
+//
