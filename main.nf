@@ -307,7 +307,7 @@ process MiniMap2Index {
  * STEP 1: FastQC
  */
 process FastQC {
-    tag "$name"
+    tag "$sample"
     label 'process_medium'
     publishDir "${params.outdir}/fastqc", mode: params.publish_dir_mode,
         saveAs: { filename ->
@@ -349,7 +349,7 @@ process NanoPlot {
     publishDir "${params.outdir}/nanoplot/${sample}", mode: params.publish_dir_mode
 
     when:
-    !params.skip_fastqc && !params.skip_qc && long_reads
+    !params.skip_nanoplot && !params.skip_qc && long_reads
 
     input:
     set val(sample), file(reads), val(single_end), val(long_reads) from ch_reads_nanoplot
