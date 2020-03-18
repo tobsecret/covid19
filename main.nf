@@ -304,7 +304,44 @@ process MiniMap2Index {
 ///////////////////////////////////////////////////////////////////////////////
 
 /*
- * STEP 1 - FastQ QC using NanoPlot
+ * STEP 1: FastQC
+ */
+process FastQC {
+    tag "$name"
+    label 'process_medium'
+    publishDir "${params.outdir}/fastqc", mode: params.publish_dir_mode,
+        saveAs: { filename ->
+                      filename.endsWith(".zip") ? "zips/$filename" : "$filename"
+                }
+
+    when:
+    !params.skip_fastqc && !params.skip_qc
+
+    input:
+    set val(sample), file(reads), val(single_end), val(long_reads) from ch_reads_fastqc
+
+    output:
+    file "*.{zip,html}" into ch_fastqc_reports_mqc
+
+    script:
+    // Added soft-links to original fastqs for consistent naming in MultiQC
+    if (single_end || long_reads) {
+        """
+        [ ! -f  ${sample}.fastq.gz ] && ln -s $reads ${sample}.fastq.gz
+        fastqc -q -t $task.cpus ${sample}.fastq.gz
+        """
+    } else {
+        """
+        [ ! -f  ${sample}_1.fastq.gz ] && ln -s ${reads[0]} ${sample}_1.fastq.gz
+        [ ! -f  ${sample}_2.fastq.gz ] && ln -s ${reads[1]} ${sample}_2.fastq.gz
+        fastqc -q -t $task.cpus ${sample}_1.fastq.gz
+        fastqc -q -t $task.cpus ${sample}_2.fastq.gz
+        """
+    }
+}
+
+/*
+ * STEP 2 - FastQ QC using NanoPlot
  */
 process NanoPlot {
     tag "$sample"
@@ -312,56 +349,19 @@ process NanoPlot {
     publishDir "${params.outdir}/nanoplot/${sample}", mode: params.publish_dir_mode
 
     when:
-    long_reads
+    !params.skip_fastqc && !params.skip_qc && long_reads
 
     input:
-    set val(sample), file(fastq), val(single_end), val(long_reads) from ch_reads_nanoplot
+    set val(sample), file(reads), val(single_end), val(long_reads) from ch_reads_nanoplot
 
     output:
     file "*.{png,html,txt,log}"
 
     script:
     """
-    NanoPlot -t $task.cpus --fastq $fastq
+    NanoPlot -t $task.cpus --fastq $reads
     """
 }
-
-// /*
-//  * STEP 1: FastQC
-//  */
-// process FastQC {
-//     tag "$name"
-//     label 'process_medium'
-//     publishDir "${params.outdir}/fastqc", mode: params.publish_dir_mode,
-//         saveAs: { filename ->
-//                       filename.endsWith(".zip") ? "zips/$filename" : "$filename"
-//                 }
-//
-//     when:
-//     !params.skip_fastqc
-//
-//     input:
-//     set val(name), file(reads) from ch_raw_reads_fastqc
-//
-//     output:
-//     file "*.{zip,html}" into ch_fastqc_reports_mqc
-//
-//     script:
-//     // Added soft-links to original fastqs for consistent naming in MultiQC
-//     if (params.single_end) {
-//         """
-//         [ ! -f  ${name}.fastq.gz ] && ln -s $reads ${name}.fastq.gz
-//         fastqc -q -t $task.cpus ${name}.fastq.gz
-//         """
-//     } else {
-//         """
-//         [ ! -f  ${name}_1.fastq.gz ] && ln -s ${reads[0]} ${name}_1.fastq.gz
-//         [ ! -f  ${name}_2.fastq.gz ] && ln -s ${reads[1]} ${name}_2.fastq.gz
-//         fastqc -q -t $task.cpus ${name}_1.fastq.gz
-//         fastqc -q -t $task.cpus ${name}_2.fastq.gz
-//         """
-//     }
-// }
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
