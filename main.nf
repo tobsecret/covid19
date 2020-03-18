@@ -226,17 +226,17 @@ def validate_input(LinkedHashMap sample) {
     def single_end = sample.single_end.toBoolean()
     def long_reads = sample.long_reads.toBoolean()
 
-    def new_array = []
+    def array = []
     if (single_end || long_reads) {
-        new_array = [ sample_id, [ file(fastq_1, checkIfExists: true) ], single_end, long_reads ]
+        array = [ sample_id, [ file(fastq_1, checkIfExists: true) ], single_end, long_reads ]
     } else {
-        new_array = [ sample_id, [ file(fastq_1, checkIfExists: true), file(fastq_2, checkIfExists: true) ], single_end, long_reads ]
+        array = [ sample_id, [ file(fastq_1, checkIfExists: true), file(fastq_2, checkIfExists: true) ], single_end, long_reads ]
     }
-    return new_array
+    return array
 }
 
 /*
- * Create channels for input fastq files: [ sample, fastq_1, fastq_2, single_end?, long_reads? ]
+ * Create channels for input fastq files
  */
 ch_samplesheet_reformat
     .splitCsv(header:true, sep:',')
