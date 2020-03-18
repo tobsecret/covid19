@@ -284,6 +284,8 @@ if (!params.bwa_index) {
 process MiniMap2Index {
     tag "$fasta"
     label 'process_medium'
+    publishDir path: { params.save_reference ? "${params.outdir}/genome/minimap2" : params.outdir },
+        saveAs: { params.save_reference ? it : null }, mode: params.publish_dir_mode
 
     input:
     file fasta from ch_fasta
@@ -450,39 +452,39 @@ process MiniMap2Align {
     """
 }
 
-// /*
-//  * STEP 3.2: Convert BAM to coordinate sorted BAM
-//  */
-// process SortBAM {
-//     tag "$name"
-//     label 'process_medium'
-//     if (params.save_align_intermeds) {
-//         publishDir path: "${params.outdir}/bwa/library", mode: params.publish_dir_mode,
-//             saveAs: { filename ->
-//                           if (filename.endsWith(".flagstat")) "samtools_stats/$filename"
-//                           else if (filename.endsWith(".idxstats")) "samtools_stats/$filename"
-//                           else if (filename.endsWith(".stats")) "samtools_stats/$filename"
-//                           else filename
-//                     }
-//     }
-//
-//     input:
-//     set val(name), file(bam) from ch_bwa_bam
-//
-//     output:
-//     set val(name), file("*.sorted.{bam,bam.bai}") into ch_sort_bam_merge
-//     file "*.{flagstat,idxstats,stats}" into ch_sort_bam_flagstat_mqc
-//
-//     script:
-//     prefix = "${name}.Lb"
-//     """
-//     samtools sort -@ $task.cpus -o ${prefix}.sorted.bam -T $name $bam
-//     samtools index ${prefix}.sorted.bam
-//     samtools flagstat ${prefix}.sorted.bam > ${prefix}.sorted.bam.flagstat
-//     samtools idxstats ${prefix}.sorted.bam > ${prefix}.sorted.bam.idxstats
-//     samtools stats ${prefix}.sorted.bam > ${prefix}.sorted.bam.stats
-//     """
-// }
+/*
+ * STEP 3.2: Convert BAM to coordinate sorted BAM
+ */
+process SortBAM {
+    tag "$sample"
+    label 'process_medium'
+    if (params.save_align_intermeds) {
+        publishDir path: "${params.outdir}/${aligner}", mode: params.publish_dir_mode,
+            saveAs: { filename ->
+                          if (filename.endsWith(".flagstat")) "samtools_stats/$filename"
+                          else if (filename.endsWith(".idxstats")) "samtools_stats/$filename"
+                          else if (filename.endsWith(".stats")) "samtools_stats/$filename"
+                          else filename
+                    }
+    }
+
+    input:
+    set val(sample), val(single_end), val(long_reads), file(bam) from ch_bwa_bam.concat(ch_minimap2_bam)
+
+    output:
+    set val(sample), val(single_end), val(long_reads), file("*.sorted.{bam,bam.bai}") into ch_sort_bam
+    file "*.{flagstat,idxstats,stats}" into ch_sort_bam_flagstat_mqc
+
+    script:
+    aligner = long_reads ? "minimap2" : "bwa"
+    """
+    samtools sort -@ $task.cpus -o ${sample}.sorted.bam -T $sample $bam
+    samtools index ${sample}.sorted.bam
+    samtools flagstat ${sample}.sorted.bam > ${sample}.sorted.bam.flagstat
+    samtools idxstats ${sample}.sorted.bam > ${sample}.sorted.bam.idxstats
+    samtools stats ${sample}.sorted.bam > ${sample}.sorted.bam.stats
+    """
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -492,47 +494,8 @@ process MiniMap2Align {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// /*
-//  * STEP 5.2: Picard CollectMultipleMetrics after merging libraries and filtering
-//  */
-// process MergedLibMetrics {
-//     tag "$name"
-//     label 'process_medium'
-//     publishDir path: "${params.outdir}/bwa/mergedLibrary", mode: params.publish_dir_mode,
-//         saveAs: { filename ->
-//                       if (filename.endsWith("_metrics")) "picard_metrics/$filename"
-//                       else if (filename.endsWith(".pdf")) "picard_metrics/pdf/$filename"
-//                       else null
-//                 }
-//
-//     when:
-//     !params.skip_picard_metrics
-//
-//     input:
-//     set val(name), file(bam) from ch_mlib_rm_orphan_bam_metrics
-//     file fasta from ch_fasta
-//
-//     output:
-//     file "*_metrics" into ch_mlib_collectmetrics_mqc
-//     file "*.pdf" into ch_mlib_collectmetrics_pdf
-//
-//     script:
-//     prefix = "${name}.mLb.clN"
-//     def avail_mem = 3
-//     if (!task.memory) {
-//         log.info "[Picard MarkDuplicates] Available memory not known - defaulting to 3GB. Specify process memory requirements to change this."
-//     } else {
-//         avail_mem = task.memory.toGiga()
-//     }
-//     """
-//     picard -Xmx${avail_mem}g CollectMultipleMetrics \\
-//         INPUT=${bam[0]} \\
-//         OUTPUT=${prefix}.CollectMultipleMetrics \\
-//         REFERENCE_SEQUENCE=$fasta \\
-//         VALIDATION_STRINGENCY=LENIENT \\
-//         TMP_DIR=tmp
-//     """
-// }
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -604,6 +567,7 @@ process MultiQC {
     file (mqc_custom_config) from ch_multiqc_custom_config.collect().ifEmpty([])
     // TODO nf-core: Add in log files from your new processes for MultiQC to find!
     file ('fastqc/*') from ch_fastqc_reports_mqc.collect().ifEmpty([])
+    file ('samtools/*') from ch_sort_bam_flagstat_mqc.collect().ifEmpty([])
     file ('software_versions/*') from ch_software_versions_yaml.collect()
     file workflow_summary from ch_workflow_summary.collectFile(name: "workflow_summary_mqc.yaml")
 
@@ -799,52 +763,3 @@ def checkHostname() {
         }
     }
 }
-
-
-// /*
-//  * Create a channel for input read files
-//  */
-// if (params.readPaths) {
-//     if (params.single_end) {
-//         Channel
-//             .from(params.readPaths)
-//             .map { row -> [ row[0], [ file(row[1][0], checkIfExists: true) ] ] }
-//             .ifEmpty { exit 1, "params.readPaths was empty - no input files supplied" }
-//             .into { ch_read_files_fastqc; ch_read_files_trimming }
-//     } else {
-//         Channel
-//             .from(params.readPaths)
-//             .map { row -> [ row[0], [ file(row[1][0], checkIfExists: true), file(row[1][1], checkIfExists: true) ] ] }
-//             .ifEmpty { exit 1, "params.readPaths was empty - no input files supplied" }
-//             .into { ch_read_files_fastqc; ch_read_files_trimming }
-//     }
-// } else {
-//     Channel
-//         .fromFilePairs(params.reads, size: params.single_end ? 1 : 2)
-//         .ifEmpty { exit 1, "Cannot find any reads matching: ${params.reads}\nNB: Path needs to be enclosed in quotes!\nIf this is single-end data, please specify --single_end on the command line." }
-//         .into { ch_read_files_fastqc; ch_read_files_trimming }
-// }
-
-// /*
-//  * STEP 1 - FastQC
-//  */
-// process fastqc {
-//     tag "$name"
-//     label 'process_medium'
-//     publishDir "${params.outdir}/fastqc", mode: params.publish_dir_mode,
-//         saveAs: { filename ->
-//                       filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename"
-//                 }
-//
-//     input:
-//     set val(name), file(reads) from ch_read_files_fastqc
-//
-//     output:
-//     file "*_fastqc.{zip,html}" into ch_fastqc_results
-//
-//     script:
-//     """
-//     fastqc --quiet --threads $task.cpus $reads
-//     """
-// }
-//
