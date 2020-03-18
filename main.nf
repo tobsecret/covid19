@@ -218,19 +218,19 @@ process CheckDesign {
     """
 }
 
-// Function to get list of [ sample, [ fastq_1, fastq_2 ], single_end?, long_reads? ]
+// Function to get list of [ sample, single_end?, long_reads?, [ fastq_1, fastq_2 ] ]
 def validate_input(LinkedHashMap sample) {
     def sample_id = sample.sample_id
-    def fastq_1 = sample.fastq_1
-    def fastq_2 = sample.fastq_2
     def single_end = sample.single_end.toBoolean()
     def long_reads = sample.long_reads.toBoolean()
+    def fastq_1 = sample.fastq_1
+    def fastq_2 = sample.fastq_2
 
     def array = []
     if (single_end || long_reads) {
-        array = [ sample_id, [ file(fastq_1, checkIfExists: true) ], single_end, long_reads ]
+        array = [ sample_id, single_end, long_reads, [ file(fastq_1, checkIfExists: true) ] ]
     } else {
-        array = [ sample_id, [ file(fastq_1, checkIfExists: true), file(fastq_2, checkIfExists: true) ], single_end, long_reads ]
+        array = [ sample_id, single_end, long_reads, [ file(fastq_1, checkIfExists: true), file(fastq_2, checkIfExists: true) ] ]
     }
     return array
 }
@@ -242,7 +242,9 @@ ch_samplesheet_reformat
     .splitCsv(header:true, sep:',')
     .map { validate_input(it) }
     .into { ch_reads_nanoplot;
-            ch_reads_fastqc }
+            ch_reads_fastqc;
+            ch_reads_bwa;
+            ch_reads_minimap2 }
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -318,7 +320,7 @@ process FastQC {
     !params.skip_fastqc && !params.skip_qc
 
     input:
-    set val(sample), file(reads), val(single_end), val(long_reads) from ch_reads_fastqc
+    set val(sample), val(single_end), val(long_reads), file(reads) from ch_reads_fastqc
 
     output:
     file "*.{zip,html}" into ch_fastqc_reports_mqc
@@ -352,7 +354,7 @@ process NanoPlot {
     !params.skip_nanoplot && !params.skip_qc && long_reads
 
     input:
-    set val(sample), file(reads), val(single_end), val(long_reads) from ch_reads_nanoplot
+    set val(sample), val(single_end), val(long_reads), file(reads) from ch_reads_nanoplot
 
     output:
     file "*.{png,html,txt,log}"
@@ -371,6 +373,9 @@ process NanoPlot {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+/*
+ * STEP 2: Adapter trimming
+ */
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -381,36 +386,35 @@ process NanoPlot {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// /*
-//  * STEP 3.1: Map read(s) with bwa mem
-//  */
-// process BWAMem {
-//     tag "$name"
-//     label 'process_high'
-//
-//     input:
-//     set val(name), file(reads) from ch_trimmed_reads
-//     file index from ch_bwa_index.collect()
-//
-//     output:
-//     set val(name), file("*.bam") into ch_bwa_bam
-//
-//     script:
-//     prefix = "${name}.Lb"
-//     rg = "\'@RG\\tID:${name}\\tSM:${name.split('_')[0..-2].join('_')}\\tPL:ILLUMINA\\tLB:${name}\\tPU:1\'"
-//     if (params.seq_center) {
-//         rg = "\'@RG\\tID:${name}\\tSM:${name.split('_')[0..-2].join('_')}\\tPL:ILLUMINA\\tLB:${name}\\tPU:1\\tCN:${params.seq_center}\'"
-//     }
-//     """
-//     bwa mem \\
-//         -t $task.cpus \\
-//         -M \\
-//         -R $rg \\
-//         ${index}/${bwa_base} \\
-//         $reads \\
-//         | samtools view -@ $task.cpus -b -h -F 0x0100 -O BAM -o ${prefix}.bam -
-//     """
-// }
+/*
+ * STEP 3.1: Map read(s) with bwa mem
+ */
+process BWAMem {
+    tag "$sample"
+    label 'process_high'
+
+    when:
+    !long_reads
+    
+    input:
+    set val(sample), val(single_end), val(long_reads), file(reads) from ch_reads_bwa
+    file index from ch_bwa_index.collect()
+
+    output:
+    set val(sample), val(single_end), val(long_reads), file("*.bam") into ch_bwa_bam
+
+    script:
+    rg = "\'@RG\\tID:${sample}\\tSM:${sample.split('_')[0..-2].join('_')}\\tPL:ILLUMINA\\tLB:${sample}\\tPU:1\'"
+    """
+    bwa mem \\
+        -t $task.cpus \\
+        -M \\
+        -R $rg \\
+        ${index}/${bwa_base} \\
+        $reads \\
+        | samtools view -@ $task.cpus -b -h -F 0x0100 -O BAM -o ${sample}.bam -
+    """
+}
 //
 // process MiniMap2Align {
 //     tag "$sample"
