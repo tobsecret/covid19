@@ -392,10 +392,13 @@ process NanoPlot {
 process BWAMem {
     tag "$sample"
     label 'process_high'
+    if (params.save_align_intermeds) {
+        publishDir path: "${params.outdir}/bwa", mode: params.publish_dir_mode
+    }
 
     when:
     !long_reads
-    
+
     input:
     set val(sample), val(single_end), val(long_reads), file(reads) from ch_reads_bwa
     file index from ch_bwa_index.collect()
@@ -415,34 +418,34 @@ process BWAMem {
         | samtools view -@ $task.cpus -b -h -F 0x0100 -O BAM -o ${sample}.bam -
     """
 }
-//
-// process MiniMap2Align {
-//     tag "$sample"
-//     label 'process_medium'
-//     if (params.save_align_intermeds) {
-//         publishDir path: "${params.outdir}/${params.aligner}", mode: params.publish_dir_mode,
-//             saveAs: { filename ->
-//                           if (filename.endsWith(".sam")) filename
-//                     }
-//     }
-//
-//     input:
-//     set val(sample), file(fastq), file(fasta), file(sizes), val(gtf), val(bed), val(is_transcripts), file(index) from ch_index
-//
-//
-//     output:
-//     set val(sample), file(sizes), val(is_transcripts), file("*.sam") into ch_align_sam
-//
-//     script:
-//     preset = (params.protocol == 'DNA' || is_transcripts) ? "-ax map-ont" : "-ax splice"
-//     kmer = (params.protocol == 'directRNA') ? "-k14" : ""
-//     stranded = (params.stranded || params.protocol == 'directRNA') ? "-uf" : ""
-//     // TODO pipeline: Should be staging bed file properly as an input
-//     junctions = (params.protocol != 'DNA' && bed) ? "--junc-bed ${file(bed)}" : ""
-//     """
-//     minimap2 $preset $kmer $stranded $junctions -t $task.cpus $index $fastq > ${sample}.sam
-//     """
-// }
+
+process MiniMap2Align {
+    tag "$sample"
+    label 'process_medium'
+    if (params.save_align_intermeds) {
+        publishDir path: "${params.outdir}/minimap2", mode: params.publish_dir_mode
+    }
+
+    when:
+    long_reads
+
+    input:
+    set val(sample), val(single_end), val(long_reads), file(reads) from ch_reads_minimap2
+    file index from ch_reads_minimap2_index.collect()
+
+    output:
+    set val(sample), val(single_end), val(long_reads), file("*.bam") into ch_minimap2_bam
+
+    script:
+    """
+    minimap2 \\
+        -ax map-ont \\
+        -t $task.cpus \\
+        $index \\
+        $reads \\
+        | samtools view -@ $task.cpus -b -h -O BAM -o ${sample}.bam -
+    """
+}
 
 // /*
 //  * STEP 3.2: Convert BAM to coordinate sorted BAM
