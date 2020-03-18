@@ -20,7 +20,7 @@ def print_error(error,line):
 
 
 def check_samplesheet(FileIn,FileOut):
-    HEADER = ['sample', 'short_fastq_1', 'short_fastq_2', 'long_fastq']
+    HEADER = ['sample', 'run', 'short_fastq_1', 'short_fastq_2', 'long_fastq']
 
     ## CHECK HEADER
     fin = open(FileIn,'r')
@@ -29,32 +29,35 @@ def check_samplesheet(FileIn,FileOut):
         print("ERROR: Please check samplesheet header -> {} != {}".format(','.join(header),','.join(HEADER)))
         sys.exit(1)
 
-    sampleIDs = []
-    outLines = []
+    sampleRunDict = {}
     while True:
         line = fin.readline()
         if line:
             lspl = [x.strip() for x in line.strip().split(',')]
 
             ## CHECK VALID NUMBER OF COLUMNS PER SAMPLE
+            if len(lspl) != len(header):
+                print_error("Invalid number of columns (minimum = {})!".format(len(header)),line)
+                sys.exit(1)
+
             numCols = len([x for x in lspl if x])
-            if numCols not in [2,3]:
-                print_error("Please specify 'sample' entry along with either 'short_fastq_1'/'short_fastq_2' or with 'long_fastq'!",line)
+            if numCols < 3:
+                print_error("Invalid number of populated columns (minimum = 3)!",line)
                 sys.exit(1)
 
             ## CHECK SAMPLE ID ENTRIES
-            sample,fastQFiles = lspl[0],lspl[1:]
+            sample,run,fastQFiles = lspl[0],lspl[1],lspl[2:]
             if sample:
                 if sample.find(' ') != -1:
                     print_error("Sample entry contains spaces!",line)
                     sys.exit(1)
-
-                if sample in sampleIDs:
-                    print_error("Duplicate sample IDs not allowed!",line)
-                sampleIDs.append(sample)
-
             else:
                 print_error("Sample entry has not been specified!",line)
+                sys.exit(1)
+
+            ## CHECK RUN COLUMN IS INTEGER
+            if not run.isdigit():
+                print_error("Run id not an integer!",line)
                 sys.exit(1)
 
             ## CHECK FASTQ FILE EXTENSION
@@ -68,31 +71,68 @@ def check_samplesheet(FileIn,FileOut):
                         sys.exit(1)
 
             ## AUTO-DETECT ILLUMINA/NANOPORE
-            single_end = '0'
-            long_reads = '0'
+            readDict = {}
             short_fastq_1,short_fastq_2,long_fastq = fastQFiles
-            if short_fastq_1 and short_fastq_2:
-                pass
-            elif short_fastq_1 and not short_fastq_2:
-                single_end = '1'
-            elif not short_fastq_1 and not short_fastq_2 and long_fastq:
-                long_reads = '1'
-            else:
-                print_error("Please specify 'sample' entry along with either 'short_fastq_1'/'short_fastq_2' or with 'long_fastq'!",line)
 
-            if long_reads == '0':
-                outLines.append([sample,short_fastq_1,short_fastq_2,single_end,long_reads])
+            ## Paired-end short reads only
+            if short_fastq_1 and short_fastq_2 and not long_fastq:
+                readDict[sample+'_SR'] = [short_fastq_1, short_fastq_2, '0', '0']  ## [ FASTQ_1, FASTQ_2, SINGLE_END?, LONG_READS?]
+
+            ## Paired-end short reads and long reads
+            elif short_fastq_1 and short_fastq_2 and long_fastq:
+                readDict[sample+'_SR'] = [short_fastq_1, short_fastq_2, '0', '0']
+                readDict[sample+'_LR'] = [long_fastq, '', '0', '1']
+
+            ## Single-end short reads only
+            elif short_fastq_1 and not short_fastq_2 and not long_fastq:
+                readDict[sample+'_SR'] = [short_fastq_1, '', '1', '0']
+
+            ## Single-end short reads and long reads
+            elif short_fastq_1 and not short_fastq_2 and long_fastq:
+                readDict[sample+'_SR'] = [short_fastq_1, '', '1', '0']
+                readDict[sample+'_LR'] = [long_fastq, '', '0', '1']
+
+            elif not short_fastq_1 and not short_fastq_2 and long_fastq:    ## Long reads only
+                readDict[sample+'_LR'] = [long_fastq, '', '0', '1']
+
             else:
-                outLines.append([sample,long_fastq,'',single_end,long_reads])
+                print_error("'short_fastq_2' cannot be specified without 'short_fastq_1'!",line)
+                sys.exit(1)
+
+            ## CREATE SAMPLE MAPPING DICT = {SAMPLE_ID: {RUN_ID:[ FASTQ_1, FASTQ_2, SINGLE_END, LONG_READS]}
+            run = int(run)
+            for rsample in readDict.keys():
+                if not sampleRunDict.has_key(rsample):
+                    sampleRunDict[rsample] = {}
+                if not sampleRunDict[rsample].has_key(run):
+                    sampleRunDict[rsample][run] = readDict[rsample]
+                else:
+                    print_error("Duplicate run IDs found!",line)
+                    sys.exit(1)
+
         else:
             fin.close()
             break
 
     ## WRITE TO FILE
     fout = open(FileOut,'w')
-    fout.write(','.join(['sample', 'fastq_1', 'fastq_2', 'single_end', 'long_reads']) + '\n')
-    for line in outLines:
-        fout.write(','.join(line) + '\n')
+    fout.write(','.join(['sample_id', 'fastq_1', 'fastq_2', 'single_end', 'long_reads']) + '\n')
+    for sample in sorted(sampleRunDict.keys()):
+
+        ## CHECK THAT RUN IDS ARE IN FORMAT 1..<NUM_RUNS>
+        run_ids = set(sampleRunDict[sample].keys())
+        if len(run_ids) != max(run_ids):
+            print_error("Run IDs must start with 1..<num_runs>!","Sample: {}, Run IDs: {}".format(sample,list(run_ids)))
+            sys.exit(1)
+
+        ## CHECK THAT MULTIPLE RUNS ARE FROM THE SAME DATATYPE
+        if not all(x[-2:] == sampleRunDict[sample].values()[0][-2:] for x in sampleRunDict[sample].values()):
+            print_error("Multiple runs of a sample must be of the same datatype","Sample: {}, Run IDs: {}".format(sample,list(run_ids)))
+            sys.exit(1)
+
+        for run in sorted(sampleRunDict[sample].keys()):
+            sample_id = "{}_T{}".format(sample,run)
+            fout.write(','.join([sample_id] + sampleRunDict[sample][run]) + ',\n')
     fout.close()
 
 
