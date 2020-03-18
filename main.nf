@@ -306,7 +306,7 @@ process MiniMap2Index {
 ///////////////////////////////////////////////////////////////////////////////
 
 /*
- * STEP 1: FastQC
+ * STEP 1: Illumina and Nanopore FastQC
  */
 process FastQC {
     tag "$sample"
@@ -343,7 +343,7 @@ process FastQC {
 }
 
 /*
- * STEP 2 - FastQ QC using NanoPlot
+ * STEP 2: Nanopore FastQ QC using NanoPlot
  */
 process NanoPlot {
     tag "$sample"
@@ -387,7 +387,7 @@ process NanoPlot {
 ///////////////////////////////////////////////////////////////////////////////
 
 /*
- * STEP 3.1: Map read(s) with bwa mem
+ * STEP 3: Map Illumina read(s) with bwa mem
  */
 process BWAMem {
     tag "$sample"
@@ -419,6 +419,9 @@ process BWAMem {
     """
 }
 
+/*
+ * STEP 3: Map Nanopore read(s) with minimap2
+ */
 process MiniMap2Align {
     tag "$sample"
     label 'process_medium'
@@ -489,7 +492,6 @@ process MiniMap2Align {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-
 // /*
 //  * STEP 5.2: Picard CollectMultipleMetrics after merging libraries and filtering
 //  */
@@ -529,46 +531,6 @@ process MiniMap2Align {
 //         REFERENCE_SEQUENCE=$fasta \\
 //         VALIDATION_STRINGENCY=LENIENT \\
 //         TMP_DIR=tmp
-//     """
-// }
-
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-/* --                                                                     -- */
-/* --                             IGV                                     -- */
-/* --                                                                     -- */
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
-// /*
-//  * STEP 9: Create IGV session file
-//  */
-// process IGV {
-//     publishDir "${params.outdir}/igv/${PEAK_TYPE}", mode: params.publish_dir_mode
-//
-//     when:
-//     !params.skip_igv
-//
-//     input:
-//     file fasta from ch_fasta
-//
-//     file bigwigs from ch_mlib_bigwig_igv.collect().ifEmpty([])
-//     file peaks from ch_mlib_macs_igv.collect().ifEmpty([])
-//     file consensus_peaks from ch_mlib_macs_consensus_igv.collect().ifEmpty([])
-//     file differential_peaks from ch_mlib_macs_consensus_deseq_comp_igv.collect().ifEmpty([])
-//
-//     file rbigwigs from ch_mrep_bigwig_igv.collect().ifEmpty([])
-//     file rpeaks from ch_mrep_macs_igv.collect().ifEmpty([])
-//     file rconsensus_peaks from ch_mrep_macs_consensus_igv.collect().ifEmpty([])
-//     file rdifferential_peaks from ch_mrep_macs_consensus_deseq_comp_igv.collect().ifEmpty([])
-//
-//     output:
-//     file "*.{txt,xml}" into ch_igv_session
-//
-//     script: // scripts are bundled with the pipeline, in nf-core/atacseq/bin/
-//     """
-//     cat *.txt > igv_files.txt
-//     igv_files_to_session.py igv_session.xml igv_files.txt ../../genome/${fasta.getName()} --path_prefix '../../'
 //     """
 // }
 
@@ -629,7 +591,7 @@ process get_software_versions {
 }
 
 /*
- * STEP 2 - MultiQC
+ * STEP 10: MultiQC
  */
 process MultiQC {
     publishDir "${params.outdir}/multiqc", mode: params.publish_dir_mode
@@ -661,9 +623,8 @@ process MultiQC {
     """
 }
 
-
 /*
- * STEP 3 - Output Description HTML
+ * STEP 11: Output Description HTML
  */
 process output_documentation {
     publishDir "${params.outdir}/pipeline_info", mode: params.publish_dir_mode
