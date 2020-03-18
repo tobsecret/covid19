@@ -60,6 +60,14 @@ def helpMessage() {
     """.stripIndent()
 }
 
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* --                                                                     -- */
+/* --                SET UP CONFIGURATION VARIABLES                       -- */
+/* --                                                                     -- */
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
 // Show help message
 if (params.help) {
     helpMessage()
@@ -67,15 +75,15 @@ if (params.help) {
 }
 
 // Has the run name been specified by the user?
-//  this has the bonus effect of catching both -name and --name
+// this has the bonus effect of catching both -name and --name
 custom_runName = params.name
 if (!(workflow.runName ==~ /[a-z]+_[a-z]+/)) {
     custom_runName = workflow.runName
 }
 
-/*
- * SET UP CONFIGURATION VARIABLES
- */
+////////////////////////////////////////////////////
+/* --         DEFAULT PARAMETER VALUES         -- */
+////////////////////////////////////////////////////
 
 // Check if genome exists in the config file
 if (params.genomes && params.genome && !params.genomes.containsKey(params.genome)) {
@@ -86,7 +94,10 @@ if (params.genomes && params.genome && !params.genomes.containsKey(params.genome
 params.fasta = params.genome ? params.genomes[ params.genome ].fasta ?: false : false
 params.bwa_index = params.genome ? params.genomes[ params.genome ].bwa ?: false : false
 
-// Validate inputs
+////////////////////////////////////////////////////
+/* --          VALIDATE INPUTS                 -- */
+////////////////////////////////////////////////////
+
 if (params.input) { ch_input = file(params.input, checkIfExists: true) } else { exit 1, "Samplesheet file not specified!" }
 if (params.fasta) {
     lastPath = params.fasta.lastIndexOf(File.separator)
@@ -105,10 +116,17 @@ if (params.bwa_index) {
         .set { ch_bwa_index }
 }
 
-// Stage config files
+////////////////////////////////////////////////////
+/* --          CONFIG FILES                    -- */
+////////////////////////////////////////////////////
+
 ch_multiqc_config = file("$baseDir/assets/multiqc_config.yaml", checkIfExists: true)
 ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config, checkIfExists: true) : Channel.empty()
 ch_output_docs = file("$baseDir/docs/output.md", checkIfExists: true)
+
+////////////////////////////////////////////////////
+/* --                   AWS                    -- */
+////////////////////////////////////////////////////
 
 // Check AWS batch settings
 if (workflow.profile.contains('awsbatch')) {
@@ -121,7 +139,14 @@ if (workflow.profile.contains('awsbatch')) {
     if (params.tracedir.startsWith('s3:')) exit 1, "Specify a local tracedir or run without trace! S3 cannot be used for tracefiles."
 }
 
-// Header log info
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* --                                                                     -- */
+/* --                       HEADER LOG INFO                               -- */
+/* --                                                                     -- */
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
 log.info nfcoreHeader()
 def summary = [:]
 if (workflow.revision) summary['Pipeline Release'] = workflow.revision
@@ -167,6 +192,23 @@ log.info "-\033[2m--------------------------------------------------\033[0m-"
 // Check the hostnames against configured profiles
 checkHostname()
 
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* --                                                                     -- */
+/* --                     PARSE DESIGN FILE                               -- */
+/* --                                                                     -- */
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* --                                                                     -- */
+/* --                     PREPARE REFERENCE FILES                         -- */
+/* --                                                                     -- */
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 
 // /*
@@ -192,6 +234,38 @@ checkHostname()
 //         """
 //     }
 // }
+
+// /*
+//  * STEP 8 - Create genome/transcriptome index
+//  */
+// process MiniMap2Index {
+//     tag "$fasta"
+//     label 'process_medium'
+//
+//     input:
+//     set file(fasta), file(sizes), val(gtf), val(bed), val(is_transcripts), val(annotation_str) from ch_fasta_index
+//
+//     output:
+//     set file(fasta), file(sizes), val(gtf), val(bed), val(is_transcripts), file("*.mmi"), val(annotation_str) into ch_index
+//
+//     script:
+//     preset = (params.protocol == 'DNA' || is_transcripts) ? "-ax map-ont" : "-ax splice"
+//     kmer = (params.protocol == 'directRNA') ? "-k14" : ""
+//     stranded = (params.stranded || params.protocol == 'directRNA') ? "-uf" : ""
+//     // TODO pipeline: Should be staging bed file properly as an input
+//     junctions = (params.protocol != 'DNA' && bed) ? "--junc-bed ${file(bed)}" : ""
+//     """
+//     minimap2 $preset $kmer $stranded $junctions -t $task.cpus -d ${fasta}.mmi $fasta
+//     """
+// }
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* --                                                                     -- */
+/* --                        FASTQ QC                                     -- */
+/* --                                                                     -- */
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 // /*
 //  * STEP 4 - FastQ QC using NanoPlot
@@ -253,6 +327,24 @@ checkHostname()
 //     }
 // }
 
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* --                                                                     -- */
+/* --                        ADAPTER TRIMMING                             -- */
+/* --                                                                     -- */
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* --                                                                     -- */
+/* --                        ALIGN                                        -- */
+/* --                                                                     -- */
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
 // /*
 //  * STEP 3.1: Map read(s) with bwa mem
 //  */
@@ -284,6 +376,34 @@ checkHostname()
 //     """
 // }
 //
+// process MiniMap2Align {
+//     tag "$sample"
+//     label 'process_medium'
+//     if (params.save_align_intermeds) {
+//         publishDir path: "${params.outdir}/${params.aligner}", mode: 'copy',
+//             saveAs: { filename ->
+//                           if (filename.endsWith(".sam")) filename
+//                     }
+//     }
+//
+//     input:
+//     set val(sample), file(fastq), file(fasta), file(sizes), val(gtf), val(bed), val(is_transcripts), file(index) from ch_index
+//
+//
+//     output:
+//     set val(sample), file(sizes), val(is_transcripts), file("*.sam") into ch_align_sam
+//
+//     script:
+//     preset = (params.protocol == 'DNA' || is_transcripts) ? "-ax map-ont" : "-ax splice"
+//     kmer = (params.protocol == 'directRNA') ? "-k14" : ""
+//     stranded = (params.stranded || params.protocol == 'directRNA') ? "-uf" : ""
+//     // TODO pipeline: Should be staging bed file properly as an input
+//     junctions = (params.protocol != 'DNA' && bed) ? "--junc-bed ${file(bed)}" : ""
+//     """
+//     minimap2 $preset $kmer $stranded $junctions -t $task.cpus $index $fastq > ${sample}.sam
+//     """
+// }
+
 // /*
 //  * STEP 3.2: Convert BAM to coordinate sorted BAM
 //  */
@@ -318,57 +438,13 @@ checkHostname()
 //     """
 // }
 
-// /*
-//  * STEP 8 - Create genome/transcriptome index
-//  */
-// process MiniMap2Index {
-//     tag "$fasta"
-//     label 'process_medium'
-//
-//     input:
-//     set file(fasta), file(sizes), val(gtf), val(bed), val(is_transcripts), val(annotation_str) from ch_fasta_index
-//
-//     output:
-//     set file(fasta), file(sizes), val(gtf), val(bed), val(is_transcripts), file("*.mmi"), val(annotation_str) into ch_index
-//
-//     script:
-//     preset = (params.protocol == 'DNA' || is_transcripts) ? "-ax map-ont" : "-ax splice"
-//     kmer = (params.protocol == 'directRNA') ? "-k14" : ""
-//     stranded = (params.stranded || params.protocol == 'directRNA') ? "-uf" : ""
-//     // TODO pipeline: Should be staging bed file properly as an input
-//     junctions = (params.protocol != 'DNA' && bed) ? "--junc-bed ${file(bed)}" : ""
-//     """
-//     minimap2 $preset $kmer $stranded $junctions -t $task.cpus -d ${fasta}.mmi $fasta
-//     """
-// }
-
-// process MiniMap2Align {
-//     tag "$sample"
-//     label 'process_medium'
-//     if (params.save_align_intermeds) {
-//         publishDir path: "${params.outdir}/${params.aligner}", mode: 'copy',
-//             saveAs: { filename ->
-//                           if (filename.endsWith(".sam")) filename
-//                     }
-//     }
-//
-//     input:
-//     set val(sample), file(fastq), file(fasta), file(sizes), val(gtf), val(bed), val(is_transcripts), file(index) from ch_index
-//
-//
-//     output:
-//     set val(sample), file(sizes), val(is_transcripts), file("*.sam") into ch_align_sam
-//
-//     script:
-//     preset = (params.protocol == 'DNA' || is_transcripts) ? "-ax map-ont" : "-ax splice"
-//     kmer = (params.protocol == 'directRNA') ? "-k14" : ""
-//     stranded = (params.stranded || params.protocol == 'directRNA') ? "-uf" : ""
-//     // TODO pipeline: Should be staging bed file properly as an input
-//     junctions = (params.protocol != 'DNA' && bed) ? "--junc-bed ${file(bed)}" : ""
-//     """
-//     minimap2 $preset $kmer $stranded $junctions -t $task.cpus $index $fastq > ${sample}.sam
-//     """
-// }
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* --                                                                     -- */
+/* --                        BAM POST-ANALYSIS                            -- */
+/* --                                                                     -- */
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 
 // /*
@@ -413,6 +489,14 @@ checkHostname()
 //     """
 // }
 
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* --                                                                     -- */
+/* --                             IGV                                     -- */
+/* --                                                                     -- */
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
 // /*
 //  * STEP 9: Create IGV session file
 //  */
@@ -445,18 +529,13 @@ checkHostname()
 //     """
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* --                                                                     -- */
+/* --                          MULTIQC                                    -- */
+/* --                                                                     -- */
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 Channel.from(summary.collect{ [it.key, it.value] })
     .map { k,v -> "<dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }
