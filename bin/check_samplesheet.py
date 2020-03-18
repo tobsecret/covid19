@@ -102,9 +102,9 @@ def check_samplesheet(FileIn,FileOut):
             ## CREATE SAMPLE MAPPING DICT = {SAMPLE_ID: {RUN_ID:[ FASTQ_1, FASTQ_2, SINGLE_END, LONG_READS]}
             run = int(run)
             for rsample in readDict.keys():
-                if not sampleRunDict.has_key(rsample):
+                if rsample not in sampleRunDict:
                     sampleRunDict[rsample] = {}
-                if not sampleRunDict[rsample].has_key(run):
+                if run not in sampleRunDict[rsample]:
                     sampleRunDict[rsample][run] = readDict[rsample]
                 else:
                     print_error("Duplicate run IDs found!",line)
@@ -126,7 +126,7 @@ def check_samplesheet(FileIn,FileOut):
             sys.exit(1)
 
         ## CHECK THAT MULTIPLE RUNS ARE FROM THE SAME DATATYPE
-        if not all(x[-2:] == sampleRunDict[sample].values()[0][-2:] for x in sampleRunDict[sample].values()):
+        if not all(x[-2:] == list(sampleRunDict[sample].values())[0][-2:] for x in list(sampleRunDict[sample].values())):
             print_error("Multiple runs of a sample must be of the same datatype","Sample: {}, Run IDs: {}".format(sample,list(run_ids)))
             sys.exit(1)
 
