@@ -76,30 +76,30 @@ def check_samplesheet(FileIn,FileOut):
 
             ## Paired-end short reads only
             if short_fastq_1 and short_fastq_2 and not long_fastq:
-                readDict[sample+'_SR'] = [short_fastq_1, short_fastq_2, '0', '0']  ## [ FASTQ_1, FASTQ_2, SINGLE_END?, LONG_READS?]
+                readDict[sample+'_SR'] = ['0', '0', short_fastq_1, short_fastq_2]  ## [ SINGLE_END?, LONG_READS?, FASTQ_1, FASTQ_2 ]
 
             ## Paired-end short reads and long reads
             elif short_fastq_1 and short_fastq_2 and long_fastq:
-                readDict[sample+'_SR'] = [short_fastq_1, short_fastq_2, '0', '0']
-                readDict[sample+'_LR'] = [long_fastq, '', '0', '1']
+                readDict[sample+'_SR'] = ['0', '0', short_fastq_1, short_fastq_2]
+                readDict[sample+'_LR'] = ['0', '1', long_fastq, '']
 
             ## Single-end short reads only
             elif short_fastq_1 and not short_fastq_2 and not long_fastq:
-                readDict[sample+'_SR'] = [short_fastq_1, '', '1', '0']
+                readDict[sample+'_SR'] = ['1', '0', short_fastq_1, '']
 
             ## Single-end short reads and long reads
             elif short_fastq_1 and not short_fastq_2 and long_fastq:
-                readDict[sample+'_SR'] = [short_fastq_1, '', '1', '0']
-                readDict[sample+'_LR'] = [long_fastq, '', '0', '1']
+                readDict[sample+'_SR'] = ['1', '0', short_fastq_1, '']
+                readDict[sample+'_LR'] = ['0', '1', long_fastq, '']
 
             elif not short_fastq_1 and not short_fastq_2 and long_fastq:    ## Long reads only
-                readDict[sample+'_LR'] = [long_fastq, '', '0', '1']
+                readDict[sample+'_LR'] = ['0', '1', long_fastq, '']
 
             else:
                 print_error("'short_fastq_2' cannot be specified without 'short_fastq_1'!",line)
                 sys.exit(1)
 
-            ## CREATE SAMPLE MAPPING DICT = {SAMPLE_ID: {RUN_ID:[ FASTQ_1, FASTQ_2, SINGLE_END, LONG_READS]}
+            ## CREATE SAMPLE MAPPING DICT = {SAMPLE_ID: {RUN_ID:[ SINGLE_END, LONG_READS, FASTQ_1, FASTQ_2 ]}
             run = int(run)
             for rsample in readDict.keys():
                 if rsample not in sampleRunDict:
@@ -116,7 +116,7 @@ def check_samplesheet(FileIn,FileOut):
 
     ## WRITE TO FILE
     fout = open(FileOut,'w')
-    fout.write(','.join(['sample_id', 'fastq_1', 'fastq_2', 'single_end', 'long_reads']) + '\n')
+    fout.write(','.join(['sample_id', 'single_end', 'long_reads', 'fastq_1', 'fastq_2']) + '\n')
     for sample in sorted(sampleRunDict.keys()):
 
         ## CHECK THAT RUN IDS ARE IN FORMAT 1..<NUM_RUNS>
@@ -126,7 +126,7 @@ def check_samplesheet(FileIn,FileOut):
             sys.exit(1)
 
         ## CHECK THAT MULTIPLE RUNS ARE FROM THE SAME DATATYPE
-        if not all(x[-2:] == list(sampleRunDict[sample].values())[0][-2:] for x in list(sampleRunDict[sample].values())):
+        if not all(x[:2] == list(sampleRunDict[sample].values())[0][:2] for x in list(sampleRunDict[sample].values())):
             print_error("Multiple runs of a sample must be of the same datatype","Sample: {}, Run IDs: {}".format(sample,list(run_ids)))
             sys.exit(1)
 
