@@ -155,7 +155,6 @@ summary['Run Name']         = custom_runName ?: workflow.runName
 summary['Samplesheet']            = params.input
 summary['Genome']                 = params.genome ?: 'Not supplied'
 summary['Fasta File']             = params.fasta
-summary['GTF File']               = params.gtf
 if (params.bwa_index)             summary['BWA Index'] = params.bwa_index
 summary['Save Genome Index']      = params.save_reference ? 'Yes' : 'No'
 if (params.skip_trimming)         summary['Skip Trimming'] = 'Yes'
