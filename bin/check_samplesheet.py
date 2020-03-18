@@ -52,7 +52,7 @@ def check_samplesheet(FileIn,FileOut):
                 if sample in sampleIDs:
                     print_error("Duplicate sample IDs not allowed!",line)
                 sampleIDs.append(sample)
-                
+
             else:
                 print_error("Sample entry has not been specified!",line)
                 sys.exit(1)
@@ -71,7 +71,6 @@ def check_samplesheet(FileIn,FileOut):
             single_end = '0'
             long_reads = '0'
             short_fastq_1,short_fastq_2,long_fastq = fastQFiles
-            print fastQFiles
             if short_fastq_1 and short_fastq_2:
                 pass
             elif short_fastq_1 and not short_fastq_2:
