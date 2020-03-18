@@ -244,8 +244,6 @@ ch_samplesheet_reformat
     .into { ch_sample_info;
             ch_sample_name }
 
-ch_sample_info.println()
-
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /* --                                                                     -- */
@@ -254,54 +252,48 @@ ch_sample_info.println()
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+/*
+ * PREPROCESSING: Build BWA index
+ */
+if (!params.bwa_index) {
+    process BWAIndex {
+        tag "$fasta"
+        label 'process_high'
+        publishDir path: { params.save_reference ? "${params.outdir}/genome" : params.outdir },
+            saveAs: { params.save_reference ? it : null }, mode: params.publish_dir_mode
 
-// /*
-//  * PREPROCESSING: Build BWA index
-//  */
-// if (!params.bwa_index) {
-//     process BWAIndex {
-//         tag "$fasta"
-//         label 'process_high'
-//         publishDir path: { params.save_reference ? "${params.outdir}/genome" : params.outdir },
-//             saveAs: { params.save_reference ? it : null }, mode: params.publish_dir_mode
-//
-//         input:
-//         file fasta from ch_fasta
-//
-//         output:
-//         file "BWAIndex" into ch_bwa_index
-//
-//         script:
-//         """
-//         bwa index -a bwtsw $fasta
-//         mkdir BWAIndex && mv ${fasta}* BWAIndex
-//         """
-//     }
-// }
+        input:
+        file fasta from ch_fasta
 
-// /*
-//  * STEP 8 - Create genome/transcriptome index
-//  */
-// process MiniMap2Index {
-//     tag "$fasta"
-//     label 'process_medium'
-//
-//     input:
-//     set file(fasta), file(sizes), val(gtf), val(bed), val(is_transcripts), val(annotation_str) from ch_fasta_index
-//
-//     output:
-//     set file(fasta), file(sizes), val(gtf), val(bed), val(is_transcripts), file("*.mmi"), val(annotation_str) into ch_index
-//
-//     script:
-//     preset = (params.protocol == 'DNA' || is_transcripts) ? "-ax map-ont" : "-ax splice"
-//     kmer = (params.protocol == 'directRNA') ? "-k14" : ""
-//     stranded = (params.stranded || params.protocol == 'directRNA') ? "-uf" : ""
-//     // TODO pipeline: Should be staging bed file properly as an input
-//     junctions = (params.protocol != 'DNA' && bed) ? "--junc-bed ${file(bed)}" : ""
-//     """
-//     minimap2 $preset $kmer $stranded $junctions -t $task.cpus -d ${fasta}.mmi $fasta
-//     """
-// }
+        output:
+        file "BWAIndex" into ch_bwa_index
+
+        script:
+        """
+        bwa index -a bwtsw $fasta
+        mkdir BWAIndex && mv ${fasta}* BWAIndex
+        """
+    }
+}
+
+/*
+ * PREPROCESSING: Build MiniMap2 index
+ */
+process MiniMap2Index {
+    tag "$fasta"
+    label 'process_medium'
+
+    input:
+    file fasta from ch_fasta
+
+    output:
+    file "*.mmi" into ch_minimap2_index
+    
+    script:
+    """
+    minimap2 -ax map-ont  -t $task.cpus -d ${fasta}.mmi $fasta
+    """
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
