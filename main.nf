@@ -241,8 +241,8 @@ def validate_input(LinkedHashMap sample) {
 ch_samplesheet_reformat
     .splitCsv(header:true, sep:',')
     .map { validate_input(it) }
-    .into { ch_sample_info;
-            ch_sample_name }
+    .into { ch_reads_nanoplot;
+            ch_reads_fastqc }
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -288,7 +288,7 @@ process MiniMap2Index {
 
     output:
     file "*.mmi" into ch_minimap2_index
-    
+
     script:
     """
     minimap2 -ax map-ont  -t $task.cpus -d ${fasta}.mmi $fasta
@@ -303,28 +303,28 @@ process MiniMap2Index {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-// /*
-//  * STEP 4 - FastQ QC using NanoPlot
-//  */
-// process NanoPlotFastQ {
-//     tag "$sample"
-//     label 'process_low'
-//     publishDir "${params.outdir}/nanoplot/fastq/${sample}", mode: params.publish_dir_mode
-//
-//     when:
-//     !params.skip_qc && !params.skip_nanoplot
-//
-//     input:
-//     set val(sample), file(fastq) from ch_fastq_nanoplot.map { ch -> [ ch[0], ch[1] ] }
-//
-//     output:
-//     file "*.{png,html,txt,log}"
-//
-//     script:
-//     """
-//     NanoPlot -t $task.cpus --fastq $fastq
-//     """
-// }
+/*
+ * STEP 1 - FastQ QC using NanoPlot
+ */
+process NanoPlot {
+    tag "$sample"
+    label 'process_low'
+    publishDir "${params.outdir}/nanoplot/${sample}", mode: params.publish_dir_mode
+
+    when:
+    long_reads
+
+    input:
+    set val(sample), file(fastq), val(single_end), val(long_reads) from ch_reads_nanoplot
+
+    output:
+    file "*.{png,html,txt,log}"
+
+    script:
+    """
+    NanoPlot -t $task.cpus --fastq $fastq
+    """
+}
 
 // /*
 //  * STEP 1: FastQC
