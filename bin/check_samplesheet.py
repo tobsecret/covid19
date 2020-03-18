@@ -29,6 +29,7 @@ def check_samplesheet(FileIn,FileOut):
         print("ERROR: Please check samplesheet header -> {} != {}".format(','.join(header),','.join(HEADER)))
         sys.exit(1)
 
+    sampleIDs = []
     outLines = []
     while True:
         line = fin.readline()
@@ -47,6 +48,11 @@ def check_samplesheet(FileIn,FileOut):
                 if sample.find(' ') != -1:
                     print_error("Sample entry contains spaces!",line)
                     sys.exit(1)
+
+                if sample in sampleIDs:
+                    print_error("Duplicate sample IDs not allowed!",line)
+                sampleIDs.append(sample)
+                
             else:
                 print_error("Sample entry has not been specified!",line)
                 sys.exit(1)
