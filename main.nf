@@ -199,6 +199,25 @@ checkHostname()
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+/*
+ * PREPROCESSING: Reformat design file and check validitiy
+ */
+process CheckDesign {
+    tag "$samplesheet"
+    publishDir "${params.outdir}/pipeline_info", mode: params.publish_dir_mode
+
+    input:
+    file samplesheet from ch_input
+
+    output:
+    file "*.csv" into ch_samplesheet_reformat
+
+    script:  // This script is bundled with the pipeline, in nf-core/covid19/bin/
+    """
+    check_samplesheet.py $samplesheet samplesheet_reformat.csv
+    """
+}
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -272,7 +291,7 @@ checkHostname()
 // process NanoPlotFastQ {
 //     tag "$sample"
 //     label 'process_low'
-//     publishDir "${params.outdir}/nanoplot/fastq/${sample}", mode: 'copy'
+//     publishDir "${params.outdir}/nanoplot/fastq/${sample}", mode: params.publish_dir_mode
 //
 //     when:
 //     !params.skip_qc && !params.skip_nanoplot
@@ -379,7 +398,7 @@ checkHostname()
 //     tag "$sample"
 //     label 'process_medium'
 //     if (params.save_align_intermeds) {
-//         publishDir path: "${params.outdir}/${params.aligner}", mode: 'copy',
+//         publishDir path: "${params.outdir}/${params.aligner}", mode: params.publish_dir_mode,
 //             saveAs: { filename ->
 //                           if (filename.endsWith(".sam")) filename
 //                     }
@@ -557,7 +576,7 @@ Channel.from(summary.collect{ [it.key, it.value] })
  * Parse software version numbers
  */
 process get_software_versions {
-    publishDir "${params.outdir}/pipeline_info", mode: 'copy',
+    publishDir "${params.outdir}/pipeline_info", mode: params.publish_dir_mode,
         saveAs: { filename ->
                       if (filename.indexOf(".csv") > 0) filename
                       else null
@@ -588,7 +607,7 @@ process get_software_versions {
 //  * STEP 2 - MultiQC
 //  */
 // process multiqc {
-//     publishDir "${params.outdir}/MultiQC", mode: 'copy'
+//     publishDir "${params.outdir}/MultiQC", mode: params.publish_dir_mode
 //
 //     input:
 //     file (multiqc_config) from ch_multiqc_config
@@ -617,7 +636,7 @@ process get_software_versions {
  * STEP 3 - Output Description HTML
  */
 process output_documentation {
-    publishDir "${params.outdir}/pipeline_info", mode: 'copy'
+    publishDir "${params.outdir}/pipeline_info", mode: params.publish_dir_mode
 
     input:
     file output_docs from ch_output_docs
@@ -821,7 +840,7 @@ def checkHostname() {
 // process fastqc {
 //     tag "$name"
 //     label 'process_medium'
-//     publishDir "${params.outdir}/fastqc", mode: 'copy',
+//     publishDir "${params.outdir}/fastqc", mode: params.publish_dir_mode,
 //         saveAs: { filename ->
 //                       filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename"
 //                 }
