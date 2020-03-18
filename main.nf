@@ -431,7 +431,7 @@ process MiniMap2Align {
 
     input:
     set val(sample), val(single_end), val(long_reads), file(reads) from ch_reads_minimap2
-    file index from ch_reads_minimap2_index.collect()
+    file index from ch_minimap2_index.collect()
 
     output:
     set val(sample), val(single_end), val(long_reads), file("*.bam") into ch_minimap2_bam
