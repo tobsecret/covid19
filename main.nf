@@ -459,7 +459,7 @@ process SortBAM {
     tag "$sample"
     label 'process_medium'
     if (params.save_align_intermeds) {
-        publishDir path: "${params.outdir}/${aligner}", mode: params.publish_dir_mode,
+        publishDir path: "${params.outdir}/bam", mode: params.publish_dir_mode,
             saveAs: { filename ->
                           if (filename.endsWith(".flagstat")) "samtools_stats/$filename"
                           else if (filename.endsWith(".idxstats")) "samtools_stats/$filename"
@@ -476,7 +476,7 @@ process SortBAM {
     file "*.{flagstat,idxstats,stats}" into ch_sort_bam_flagstat_mqc
 
     script:
-    aligner = long_reads ? "minimap2" : "bwa"
+    //def aligner = long_reads ? "minimap2" : "bwa"
     """
     samtools sort -@ $task.cpus -o ${sample}.sorted.bam -T $sample $bam
     samtools index ${sample}.sorted.bam
