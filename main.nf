@@ -202,7 +202,7 @@ checkHostname()
 /*
  * PREPROCESSING: Reformat design file and check validitiy
  */
-process CheckDesign {
+process CHECK_DESIGN {
     tag "$samplesheet"
     publishDir "${params.outdir}/pipeline_info", mode: params.publish_dir_mode
 
@@ -258,7 +258,7 @@ ch_samplesheet_reformat
  * PREPROCESSING: Build BWA index
  */
 if (!params.bwa_index) {
-    process BWAIndex {
+    process BWA_INDEX {
         tag "$fasta"
         label 'process_high'
         publishDir path: { params.save_reference ? "${params.outdir}/genome" : params.outdir },
@@ -279,12 +279,12 @@ if (!params.bwa_index) {
 }
 
 /*
- * PREPROCESSING: Build MiniMap2 index
+ * PREPROCESSING: Build Minimap2 index
  */
-process MiniMap2Index {
+process MINIMAP2_INDEX {
     tag "$fasta"
     label 'process_medium'
-    publishDir path: { params.save_reference ? "${params.outdir}/genome/MiniMap2Index" : params.outdir },
+    publishDir path: { params.save_reference ? "${params.outdir}/genome/Minimap2Index" : params.outdir },
         saveAs: { params.save_reference ? it : null }, mode: params.publish_dir_mode
 
     input:
@@ -310,7 +310,7 @@ process MiniMap2Index {
 /*
  * STEP 1: Illumina and Nanopore FastQC
  */
-process FastQC {
+process FASTQC {
     tag "$sample"
     label 'process_medium'
     publishDir "${params.outdir}/fastqc", mode: params.publish_dir_mode,
@@ -347,7 +347,7 @@ process FastQC {
 /*
  * STEP 2: Nanopore FastQ QC using NanoPlot
  */
-process NanoPlot {
+process NANOPLOT {
     tag "$sample"
     label 'process_low'
     publishDir "${params.outdir}/nanoplot/${sample}", mode: params.publish_dir_mode
@@ -391,7 +391,7 @@ process NanoPlot {
 /*
  * STEP 3: Map Illumina read(s) with bwa mem
  */
-process BWAMem {
+process BWA_MEM {
     tag "$sample"
     label 'process_high'
     if (params.save_align_intermeds) {
@@ -422,9 +422,9 @@ process BWAMem {
 }
 
 /*
- * STEP 3: Map Nanopore read(s) with minimap2
+ * STEP 3: Map Nanopore read(s) with Minimap2
  */
-process MiniMap2Align {
+process MIMIMAP2_ALIGN {
     tag "$sample"
     label 'process_medium'
     if (params.save_align_intermeds) {
@@ -455,7 +455,7 @@ process MiniMap2Align {
 /*
  * STEP 3.2: Convert BAM to coordinate sorted BAM
  */
-process SortBAM {
+process SORT_BAM {
     tag "$sample"
     label 'process_medium'
     if (params.save_align_intermeds) {
@@ -556,7 +556,7 @@ process get_software_versions {
 /*
  * STEP 10: MultiQC
  */
-process MultiQC {
+process MULTIQC {
     publishDir "${params.outdir}/multiqc", mode: params.publish_dir_mode
 
     when:
