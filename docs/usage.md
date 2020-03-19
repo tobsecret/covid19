@@ -136,7 +136,7 @@ You will need to create a design file with information about the samples in your
 
 #### Multiple runs of the same library
 
-The `sample` identifiers has to be the same when you have re-sequenced the same sample more than once (e.g. to increase sequencing depth). However, you must increment the `run` column appropriately. The first run value for any given sample must be 1. The pipeline will perform the analysis in parallel, and subsequently merge them when required. Below is an example where `SRR10948474` has been sequenced on multiple lanes on an Illumina machine in paired-end format as well as being sequenced twice on the Nanopore platform. In contrast, `SRR10948550` has only been sequenced twice on the Nanopore platform.
+The `sample` identifiers have to be the same when you have re-sequenced the same sample more than once (e.g. to increase sequencing depth). However, you must increment the `run` column appropriately. The first run value for any given sample must be 1. The pipeline will perform the analysis in parallel, and subsequently merge them when required. Below is an example where `SRR10948474` has been sequenced on multiple lanes on an Illumina machine in paired-end format as well as being sequenced twice on the Nanopore platform. In contrast, `SRR10948550` has only been sequenced twice on the Nanopore platform.
 
 ```bash
 sample,run,short_fastq_1,short_fastq_2,long_fastq
