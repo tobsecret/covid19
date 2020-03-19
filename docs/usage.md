@@ -14,6 +14,7 @@
   * [`--genome` (using iGenomes)](#--genome-using-igenomes)
   * [`--fasta`](#--fasta)
   * [`--bwa_index`](#--bwa_index)
+  * [`--minimap2_index`](#--minimap2_index)
   * [`--save_reference`](#--save_reference)
   * [`--igenomes_ignore`](#--igenomes_ignore)
 * [Adapter trimming](#adapter-trimming)
@@ -219,10 +220,18 @@ Full path to fasta file containing reference genome (*mandatory* if `--genome` i
 
 ### `--bwa_index`
 
-Full path to an existing BWA index for your reference genome including the base name for the index.
+Full path to an existing BWA index for the reference genome including the base name for the index.
 
 ```bash
 --bwa_index '[directory containing BWA index]/genome.fa'
+```
+
+### `--minimap2_index`
+
+Full path to an existing Minimap2 index file for the reference genome.
+
+```bash
+--minimap2_index '[directory containing Minimap2 index]/genome.mmi'
 ```
 
 ### `--save_reference`
