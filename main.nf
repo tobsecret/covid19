@@ -200,9 +200,9 @@ checkHostname()
 ///////////////////////////////////////////////////////////////////////////////
 
 /*
- * PREPROCESSING: Reformat design file and check validitiy
+ * PREPROCESSING: Reformat samplesheet and check validitiy
  */
-process CHECK_DESIGN {
+process CHECK_SAMPLESHEET {
     tag "$samplesheet"
     publishDir "${params.outdir}/pipeline_info", mode: params.publish_dir_mode
 
