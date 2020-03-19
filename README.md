@@ -13,7 +13,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 
 ## Pipeline summary
 
-Initial workflow development will be based on workflows developed in:
+This workflow development is currently based on:
 
 [Initial analysis of COVID-19 data using Galaxy, BioConda and public research infrastructure (XSEDE, de.NBI-cloud, ARDC cloud)](https://github.com/galaxyproject/SARS-CoV-2)
 
@@ -42,7 +42,7 @@ iv. Start running your own analysis!
 <!-- TODO nf-core: Update the default command above used to run the pipeline -->
 
 ```bash
-nextflow run nf-core/covid19 -profile <docker/singularity/conda/institute> --reads '*_R{1,2}.fastq.gz' --genome GRCh37
+nextflow run nf-core/covid19 -profile <docker/singularity/conda/institute> --input samplesheet.csv --genome hg38
 ```
 
 See [usage docs](docs/usage.md) for all of the available options when running the pipeline.

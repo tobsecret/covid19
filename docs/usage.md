@@ -9,12 +9,20 @@
   * [Reproducibility](#reproducibility)
 * [Main arguments](#main-arguments)
   * [`-profile`](#-profile)
-  * [`--reads`](#--reads)
-  * [`--single_end`](#--single_end)
+  * [`--input`](#--input)
 * [Reference genomes](#reference-genomes)
   * [`--genome` (using iGenomes)](#--genome-using-igenomes)
   * [`--fasta`](#--fasta)
+  * [`--bwa_index`](#--bwa_index)
+  * [`--minimap2_index`](#--minimap2_index)
+  * [`--save_reference`](#--save_reference)
   * [`--igenomes_ignore`](#--igenomes_ignore)
+* [Adapter trimming](#adapter-trimming)
+  * [`--skip_trimming`](#--skip_trimming)
+  * [`--save_trimmed`](#--save_trimmed)
+* [Alignments](#alignments)
+  * [`--save_align_intermeds`](#--save_align_intermeds)
+* [Skipping QC steps](#skipping-qc-steps)
 * [Job resources](#job-resources)
   * [Automatic resubmission](#automatic-resubmission)
   * [Custom resource requests](#custom-resource-requests)
@@ -119,31 +127,48 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
 
 <!-- TODO nf-core: Document required command line parameters -->
 
-### `--reads`
+### `--input`
 
-Use this to specify the location of your input FastQ files. For example:
-
-```bash
---reads 'path/to/data/sample_*_{1,2}.fastq'
-```
-
-Please note the following requirements:
-
-1. The path must be enclosed in quotes
-2. The path must have at least one `*` wildcard character
-3. When using the pipeline with paired end data, the path must use `{1,2}` notation to specify read pairs.
-
-If left unspecified, a default pattern is used: `data/*{1,2}.fastq.gz`
-
-### `--single_end`
-
-By default, the pipeline expects paired-end data. If you have single-end data, you need to specify `--single_end` on the command line when you launch the pipeline. A normal glob pattern, enclosed in quotation marks, can then be used for `--reads`. For example:
+You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 5 columns, and a header row as shown in the examples below.
 
 ```bash
---single_end --reads '*.fastq'
+--input '[path to design file]'
 ```
 
-It is not possible to run a mixture of single-end and paired-end files in one run.
+#### Multiple runs of the same library
+
+The `sample` identifiers have to be the same when you have re-sequenced the same sample more than once (e.g. to increase sequencing depth). However, you must increment the `run` column appropriately. The first run value for any given sample must be 1. The pipeline will perform the analysis in parallel, and subsequently merge them when required. Below is an example where `SRR10948474` has been sequenced on multiple lanes on an Illumina machine in paired-end format as well as being sequenced twice on the Nanopore platform. In contrast, `SRR10948550` has only been sequenced twice on the Nanopore platform.
+
+```bash
+sample,run,short_fastq_1,short_fastq_2,long_fastq
+SRR10948474,1,SRR10948474_S1_L002_R1_001.fastq.gz,SRR10948474_S1_L002_R2_001.fastq.gz,barcode01_RUN1.fastq.gz
+SRR10948474,2,SRR10948474_S1_L005_R1_001.fastq.gz,SRR10948474_S1_L005_R2_001.fastq.gz,barcode01_RUN2.fastq.gz
+SRR10948550,1,,,SRR10948550_RUN1.fastq.gz
+SRR10948550,2,,,SRR10948550_RUN2.fastq.gz
+```
+
+#### Full design
+
+A final design file may look something like the one below. `SRR10903401` was only sequenced once in Illumina PE format, `SRR10948474` was sequenced twice in Illumina PE format and on a MinION, `SRR10903402` was sequenced twice in Illumina SE format and `SRR10948550` was sequenced twice on a MinION.
+
+```bash
+sample,run,short_fastq_1,short_fastq_2,long_fastq
+SRR10903401,1,SRR10903401_S1_L003_R1_001.fastq.gz,SRR10903401_S1_L003_R2_001.fastq.gz,
+SRR10948474,1,SRR10948474_S1_L002_R1_001.fastq.gz,SRR10948474_S1_L002_R2_001.fastq.gz,barcode01_RUN1.fastq.gz
+SRR10948474,2,SRR10948474_S1_L005_R1_001.fastq.gz,SRR10948474_S1_L005_R2_001.fastq.gz,barcode01_RUN2.fastq.gz
+SRR10903402,1,SRR10903402_S1_L002_R1_001.fastq.gz,,
+SRR10903402,2,SRR10903402_S1_L005_R1_001.fastq.gz,,
+SRR10948550,1,,,SRR10948550_RUN1.fastq.gz
+SRR10948550,2,,,SRR10948550_RUN2.fastq.gz
+```
+
+| Column          | Description                                                                                                               |
+|-----------------|---------------------------------------------------------------------------------------------------------------------------|
+| `sample`        | Sample identifier. This will be identical for multiple sequencing libraries/runs from the same sample.                    |
+| `run`           | Integer representing run number. Must start from `1..<number of runs>`.                                                   |
+| `short_fastq_1` | Full path to FastQ file for Illumina short reads 1. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz". |
+| `short_fastq_2` | Full path to FastQ file for Illumina short reads 2. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz". |
+| `long_fastq_2`  | Full path to FastQ file for Nanopore long reads. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz".    |
 
 ## Reference genomes
 
@@ -187,15 +212,63 @@ params {
 
 ### `--fasta`
 
-If you prefer, you can specify the full path to your reference genome when you run the pipeline:
+Full path to fasta file containing reference genome (*mandatory* if `--genome` is not specified). If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.
 
 ```bash
---fasta '[path to Fasta reference]'
+--fasta '[path to FASTA reference]'
 ```
+
+### `--bwa_index`
+
+Full path to an existing BWA index for the reference genome including the base name for the index.
+
+```bash
+--bwa_index '[directory containing BWA index]/genome.fa'
+```
+
+### `--minimap2_index`
+
+Full path to an existing Minimap2 index file for the reference genome.
+
+```bash
+--minimap2_index '[directory containing Minimap2 index]/genome.mmi'
+```
+
+### `--save_reference`
+
+If the BWA/Minimap2 index is generated by the pipeline use this parameter to save it to your results folder. These can then be used for future pipeline runs, reducing processing times.
 
 ### `--igenomes_ignore`
 
 Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`.
+
+## Adapter trimming
+
+### `--skip_trimming`
+
+Skip the adapter trimming step. Use this if your input FastQ files have already been trimmed outside of the workflow or if you're very confident that there is no adapter contamination in your data.
+
+### `--save_trimmed`
+
+By default, trimmed FastQ files will not be saved to the results directory. Specify this flag (or set to true in your config file) to copy these files to the results directory when complete.
+
+## Alignments
+
+### `--save_align_intermeds`
+
+By default, intermediate BAM files will not be saved. The final BAM files created after the appropriate filtering step are always saved to limit storage usage. Set to true to also save other intermediate BAM files.
+
+## Skipping QC steps
+
+The pipeline contains a large number of quality control steps. Sometimes, it may not be desirable to run all of them if time and compute resources are limited.
+The following options make this easy:
+
+| Step                      | Description                          |
+|---------------------------|--------------------------------------|
+| `--skip_fastqc`           | Skip FastQC                          |
+| `--skip_nanoplot`         | Skip NanoPlot                        |
+| `--skip_multiqc`          | Skip MultiQC                         |
+| `--skip_qc`               | Skip all QC steps except for MultiQC |
 
 ## Job resources
 
