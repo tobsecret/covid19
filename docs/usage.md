@@ -165,9 +165,9 @@ SRR10948550,2,,,SRR10948550_RUN2.fastq.gz
 |-----------------|---------------------------------------------------------------------------------------------------------------------------|
 | `sample`        | Sample identifier. This will be identical for multiple sequencing libraries/runs from the same sample.                    |
 | `run`           | Integer representing run number. Must start from `1..<number of runs>`.                                                   |
-| `short_fastq_1` | Full path to FastQ file for Illumina short reads 1. File has to be zipped and have the extension ".fastq.gz" or ".fq.gz". |
-| `short_fastq_2` | Full path to FastQ file for Illumina short reads 2. File has to be zipped and have the extension ".fastq.gz" or ".fq.gz". |
-| `long_fastq_2`  | Full path to FastQ file for Nanopore long reads. File has to be zipped and have the extension ".fastq.gz" or ".fq.gz".    |
+| `short_fastq_1` | Full path to FastQ file for Illumina short reads 1. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz". |
+| `short_fastq_2` | Full path to FastQ file for Illumina short reads 2. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz". |
+| `long_fastq_2`  | Full path to FastQ file for Nanopore long reads. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz".    |
 
 ## Reference genomes
 
