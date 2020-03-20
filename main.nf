@@ -249,7 +249,7 @@ ch_samplesheet_reformat
             ch_reads_fastqc;
             ch_reads_bwa;
             ch_reads_minimap2 }
-//ch_reads_bwa.into{ ch_reads_bwa1; ch_reads_bwa2 }
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /* --                                                                     -- */
