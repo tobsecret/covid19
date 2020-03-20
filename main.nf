@@ -249,7 +249,7 @@ ch_samplesheet_reformat
             ch_reads_fastqc;
             ch_reads_bwa;
             ch_reads_minimap2 }
-
+//ch_reads_bwa.into{ ch_reads_bwa1; ch_reads_bwa2 }
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /* --                                                                     -- */
@@ -385,6 +385,36 @@ process NANOPLOT {
  * STEP 2: Adapter trimming
  */
 
+process FASTP {
+    tag "$sample"
+    label 'process_medium'
+    publishDir "${params.outdir}/fastp", mode: params.publish_dir_mode
+    
+    when:
+    !long_reads
+
+    input:
+    set val(sample), val(single_end), val(long_reads), file(reads) from ch_reads_bwa
+
+    output:
+    set val(sample), val(single_end), val(long_reads), file("*trimmed.fastq{,.gz}") into ch_reads_trimmed
+
+    script:
+    fastp_params = "-q 20 -u 20 -l 50"
+    if (single_end) {
+        out_read = (reads.getExtension() == "gz") ? "${sample}.trimmed.fastq.gz" : "${sample}.trimmed.fastq"
+        """
+        fastp -i ${reads} -o $out_read $fastp_params
+        """
+    } else {
+        out_read1 = (reads[0].getExtension() == "gz") ? "${sample}_1.trimmed.fastq.gz" : "${sample}_1.trimmed.fastq"
+        out_read2 = (reads[1].getExtension() == "gz") ? "${sample}_2.trimmed.fastq.gz" : "${sample}_2.trimmed.fastq"
+
+        """
+        fastp -i ${reads[0]} -I ${reads[1]} -o $out_read1 -O $out_read2 $fastp_params
+        """
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -408,7 +438,7 @@ process BWA_MEM {
     !long_reads
 
     input:
-    set val(sample), val(single_end), val(long_reads), file(reads) from ch_reads_bwa
+    set val(sample), val(single_end), val(long_reads), file(reads) from ch_reads_trimmed
     file index from ch_bwa_index.collect()
 
     output:
